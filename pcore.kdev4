@@ -1,0 +1,4 @@
+[Project]
+Name=pcore
+Manager=KDevCMakeManager
+VersionControl=
