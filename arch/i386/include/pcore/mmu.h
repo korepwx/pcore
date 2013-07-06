@@ -5,14 +5,13 @@
 //   Korepwx  <public@korepwx.com>  2013-07-03
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Use of this source code is governed by a BSD-style license that can be found
-// in the LICENSE file. Some code is reused from uCore, see README.ucore for
-// more details.
+// in the LICENSE file.
 
 #ifndef _ARCH_I386_INCLUDE_PCORE_MMU_H_C9575016E3B011E2B3960021CCBF5EBE
 #define _ARCH_I386_INCLUDE_PCORE_MMU_H_C9575016E3B011E2B3960021CCBF5EBE
 #pragma once
 
-// ---- The following codes are reused from uCore ----
+// ---- The following code is derived from uCore ----
 
 /* Eflags register */
 #define FL_CF           0x00000001  // Carry Flag
@@ -72,7 +71,7 @@
 
 #else // <- __ASSEMBLER__ | not __ASSEMBLER__ -> 
 
-#include <pcore/types.h>
+#include <sys/types.h>
 
 /* Gate descriptors for interrupts and traps */
 struct gatedesc {

@@ -1,21 +1,12 @@
-// @file: kern/init/init.cc
+// @file: libs/ctype.c
 // Copyright (c) 2013 Korepwx. All rights reserved.
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Contributors:
-//   Korepwx  <public@korepwx.com>  2013-07-03
+//   Korepwx  <public@korepwx.com>  2013-07-05
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-extern "C" {
+#include <ctype.h>
 
-  /**
-   * @brief The main entry for kernel.
-   * This method is called by bootloader; @sa boot/bootmain.c
-   */
-  int kern_init(void)
-  {
-    return 0;
-  }
-  
-}
+

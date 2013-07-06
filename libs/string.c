@@ -1,16 +1,16 @@
-// @file: libs/pcore/string.c
+// @file: libs/string.c
 // Copyright (c) 2013 Korepwx. All rights reserved.
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Contributors:
-//   Korepwx  <public@korepwx.com>  2013-07-03
+//   Korepwx  <public@korepwx.com>  2013-07-05
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-#include <pcore/string.h>
+#include <string.h>
 #include <asm/string.h>
 
-// ---- The following codes are reused from uCore/libs/string.c ----
+// ---- The following code is derived from uCore/libs/string.c ----
 size_t strlen(const char *s)
 {
   size_t cnt = 0;
@@ -74,7 +74,7 @@ int strcmp(const char *s1, const char *s2)
 int stricmp(const char *s1, const char *s2)
 {
   //while (*s1 != '\0')&& *s1 == *s2) {
-  //    s1 ++, s2 ++;
+  // s1 ++, s2 ++;
   //}
   char t1, t2;
   while (*s1 != '\0') {
@@ -184,4 +184,3 @@ int memcmp(const void *v1, const void *v2, size_t n)
   }
   return 0;
 }
-

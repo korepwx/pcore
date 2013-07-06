@@ -1,17 +1,21 @@
-// @file: include/pcore/string.h
+// @file: include/string.h
 // Copyright (c) 2013 Korepwx. All rights reserved.
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Contributors:
-//   Korepwx  <public@korepwx.com>  2013-07-03
+//   Korepwx  <public@korepwx.com>  2013-07-05
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-#ifndef _INCLUDE_PCORE_STRING_H_3ECFEA3CE3A311E28FEF0021CCBF5EBE
-#define _INCLUDE_PCORE_STRING_H_3ECFEA3CE3A311E28FEF0021CCBF5EBE
+#ifndef _INCLUDE_STRING_H_DC70A0E6E55211E2BCFE74E50BEE6214
+#define _INCLUDE_STRING_H_DC70A0E6E55211E2BCFE74E50BEE6214
 #pragma once
 
-#include <pcore/types.h>
+#include <sys/cdefs.h>
+#include <sys/_null.h>
+#include <sys/_types.h>
+
+__BEGIN_DECLS
 
 extern size_t strlen(const char* s);
 extern size_t strnlen(const char* s, size_t len);
@@ -34,4 +38,6 @@ extern void *memmove(void *dst, const void *src, size_t n);
 extern void *memcpy(void *dst, const void *src, size_t n);
 extern int memcmp(const void *v1, const void *v2, size_t n);
 
-#endif // _INCLUDE_PCORE_STRING_H_3ECFEA3CE3A311E28FEF0021CCBF5EBE
+__END_DECLS
+
+#endif // _INCLUDE_STRING_H_DC70A0E6E55211E2BCFE74E50BEE6214

@@ -7,8 +7,7 @@ project = 'PWX C++ OS Kernel'
 copyright = 'Copyright (c) 2013 Korepwx. All rights reserved.'
 license = 'custom'
 customLicense =  \
-        'Use of this source code is governed by a BSD-style license that can be found in the LICENSE file. ' \
-        'Some code is reused from uCore, see README.ucore for more details.'
+        'Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.'
 
 guard = '_{path}_{uuid}'
 

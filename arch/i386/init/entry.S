@@ -1,4 +1,4 @@
-# ---- The main skeleton is reused from ucore/arch/i386/mm/memlayout.h ----
+# ---- The main skeleton is derived from ucore/arch/i386/mm/memlayout.h ----
 #include <pcore/mmu.h>
 #include <pcore/memlayout.h>
 

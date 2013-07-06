@@ -5,14 +5,13 @@
 //   Korepwx  <public@korepwx.com>  2013-07-03
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Use of this source code is governed by a BSD-style license that can be found
-// in the LICENSE file. Some code is reused from uCore, see README.ucore for
-// more details.
+// in the LICENSE file.
 
 #ifndef _ARCH_I386_INCLUDE_ASM_STRING_H_741266E6E3AA11E2AEDF0021CCBF5EBE
 #define _ARCH_I386_INCLUDE_ASM_STRING_H_741266E6E3AA11E2AEDF0021CCBF5EBE
 #pragma once
 
-// ---- The following codes are reused from uCore/arch/i386/libs/arch.h ----
+// ---- The following code is derived from uCore/arch/i386/libs/arch.h ----
 #ifndef __HAVE_ARCH_STRCMP
 #define __HAVE_ARCH_STRCMP
 static inline int __strcmp(const char *s1, const char *s2)

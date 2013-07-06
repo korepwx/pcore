@@ -14,7 +14,10 @@ project(pcore)
 # pCore Configuration
 #
 SET (PCORE_ARCH i386)
-ADD_DEFINITIONS (-D__PCORE_ARCH_${PCORE_ARCH}__=1)
+ADD_DEFINITIONS (-D__PCORE_ARCH_${PCORE_ARCH}__=1 -D__KERNEL__=1)
+
+# NOTE: When compiled under x86_64, __86_64__ should also be defined.
+#       When under pure 64bit, __LP64__ should be defined.
 
 ###
 # Common Cmake switches
@@ -22,7 +25,7 @@ ADD_DEFINITIONS (-D__PCORE_ARCH_${PCORE_ARCH}__=1)
 
 # Setup pCore include directory.
 INCLUDE_DIRECTORIES (${CMAKE_CURRENT_LIST_DIR}/include)
-INCLUDE_DIRECTORIES (arch/${PCORE_ARCH}/include)
+INCLUDE_DIRECTORIES (${CMAKE_CURRENT_LIST_DIR}/arch/${PCORE_ARCH}/include)
 
 # Compiler flags.
 SET (CMAKE_C_FLAGS "-g -Wall -O2 -ffreestanding -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector")
@@ -86,10 +89,12 @@ FILE (
   arch/${PCORE_ARCH}/*.S
 )
 
-IF (${GENERAL_SRCS})
+LIST(LENGTH GENERAL_SRCS GENERAL_SRCS_SIZE)
+LIST(LENGTH GENERAL_ARCH_SRCS GENERAL_ARCH_SRCS_SIZE)
+IF (GENERAL_SRCS_SIZE)
   LIST(REMOVE_ITEM KERN_SRCS ${GENERAL_SRCS})
 ENDIF()
-IF (${GENERAL_ARCH_SRCS})
+IF (GENERAL_ARCH_SRCS_SIZE)
   LIST(REMOVE_ITEM KERN_ARCH_SRCS ${GENERAL_ARCH_SRCS})
 ENDIF()
 

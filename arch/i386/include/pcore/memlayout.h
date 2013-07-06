@@ -5,14 +5,15 @@
 //   Korepwx  <public@korepwx.com>  2013-07-03
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Use of this source code is governed by a BSD-style license that can be found
-// in the LICENSE file. Some code is reused from uCore, see README.ucore for
-// more details.
+// in the LICENSE file.
 
 #ifndef _ARCH_I386_INCLUDE_PCORE_MEMLAYOUT_H_E3A1C674E3AE11E2B87A0021CCBF5EBE
 #define _ARCH_I386_INCLUDE_PCORE_MEMLAYOUT_H_E3A1C674E3AE11E2B87A0021CCBF5EBE
 #pragma once
 
-// ---- The following codes are reused from uCore ----
+// ---- The following code is derived from uCore ----
+
+#if defined(__KERNEL__)
 
 /* global segment number */
 #define SEG_KTEXT   1
@@ -108,6 +109,10 @@
 
 #define KERN_ACCESS(start, end)                     \
     (KERNBASE <= (start) && (start) < (end) && (end) <= KERNTOP)
+    
+// ---- pCore hacked utilities ----
+#define KVADDR(pa)        ((pa) + KERNBASE)
 
-
+#endif  // __KERNEL__
+    
 #endif // _ARCH_I386_INCLUDE_PCORE_MEMLAYOUT_H_E3A1C674E3AE11E2B87A0021CCBF5EBE
