@@ -11,10 +11,14 @@
 #define _INCLUDE_ASSERT_H_8D2AB606E61611E29580810A144E894F
 #pragma once
 
+#if !defined(assert)
+# define assert(X)  
+#endif  // assert
+
 #if defined(__KERNEL__)
-# define assert(X)
+# define kassert(X) 
 #else
-# define assert(X) 
-#endif
+# define kassert(X) 
+#endif  // __KERNEL__
 
 #endif // _INCLUDE_ASSERT_H_8D2AB606E61611E29580810A144E894F

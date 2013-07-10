@@ -42,6 +42,7 @@ typedef struct _ColorPalette ColorPalette;
 extern ColorPalette kDefault256GrayPalette;
 extern ColorPalette kDefault256RgbPalette;
 extern ColorPalette kDefault16ConsPalette;
+extern ColorPalette kDefault16GrayPalette;
 
 // ---- The following are color utilities ----
 

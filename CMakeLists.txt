@@ -54,6 +54,16 @@ ADD_LIBRARY(
 )
 
 ###
+# pCore test library
+#
+FILE (
+  GLOB_RECURSE KERNEL_TEST_SRCS 
+  test/*.c 
+  test/*.cc 
+  test/*.S
+)
+
+###
 # pCore BootLoader
 #
 
@@ -102,6 +112,7 @@ ADD_LIBRARY (
   kernel STATIC
   ${KERN_SRCS}
   ${KERN_ARCH_SRCS}
+  ${KERNEL_TEST_SRCS}
 )
 
 ADD_CUSTOM_TARGET (

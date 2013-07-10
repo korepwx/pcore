@@ -7,9 +7,11 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
+#include <dev/fb/fb.h>
 #include <dev/fb/vga.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 #include <asm/io.h>
 #include <pcore/memlayout.h>
 
@@ -20,13 +22,31 @@
 #define GRAPHICS_BUF_BASE   0xa0000
 #define GRAPHICS_BUF_SIZE   0x10000
 
+// ---- VGA adapter operation interfaces ----
+int vga_opt_probe               (VideoAdapter *va);
+int vga_opt_switch_mode         (VideoAdapter *va, int va_mode);
+int vga_opt_clear_output        (VideoAdapter *va);
+int vga_opt_set_palette_16color (VideoAdapter *va, ColorPalette *pal);
+int vga_opt_set_palette_256color(VideoAdapter *va, ColorPalette *pal);
+int vga_opt_set_plane_mask      (VideoAdapter *va, uint8_t mask);
+int vga_opt_get_plane_mask      (VideoAdapter *va, uint8_t *mask);
+
+int vga_opt_video_read_linear
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2);
+int vga_opt_video_write_linear
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2);
+int vga_opt_video_read_planes
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2);
+int vga_opt_video_write_planes
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2);
+
 // ---- VGA video modes ----
 // TODO: complete and check these video infos.
 static VideoInfo vga_video_info[] = {
   /* VGA */
   [VM_VGA_C80x25] {
     .vi_mode = VM_VGA_C80x25,
-    .vi_flags = V_INFO_COLOR | V_INFO_FONT | V_INFO_PALLETE, 
+    .vi_flags = V_INFO_COLOR | V_INFO_FONT | V_INFO_PALLETE | V_INFO_LINEAR, 
     .vi_width = 80, 
     .vi_height = 25, 
     .vi_cwidth = 8, 
@@ -37,11 +57,18 @@ static VideoInfo vga_video_info[] = {
     .vi_planes = 1,
     .vi_buffer = CGA_BUF_BASE, 
     .vi_buffer_size = CGA_BUF_SIZE, 
-    .vi_mem_model = V_INFO_MM_TEXT
+    .vi_mem_model = V_INFO_MM_TEXT,
+    .vi_adp_opt = {
+      .switch_mode = vga_opt_switch_mode,
+      .clear_output = vga_opt_clear_output,
+      .set_palette = vga_opt_set_palette_16color,
+      .set_plane_mask = vga_opt_set_plane_mask,
+      .get_plane_mask = vga_opt_get_plane_mask
+    }
   },
   [VM_VGA_BG640] {
     .vi_mode = VM_VGA_BG640, 
-    .vi_flags = V_INFO_GRAPHICS, 
+    .vi_flags = V_INFO_GRAPHICS | V_INFO_LINEAR, 
     .vi_width = 640, 
     .vi_height = 480, 
     .vi_cwidth = 8, 
@@ -51,12 +78,45 @@ static VideoInfo vga_video_info[] = {
     .vi_depth = 1, 
     .vi_planes = 1,
     .vi_buffer = GRAPHICS_BUF_BASE, 
-    .vi_buffer_size = GRAPHICS_BUF_SIZE, 
-    .vi_mem_model = V_INFO_MM_PLANAR
+    .vi_buffer_size = GRAPHICS_BUF_SIZE,
+    .vi_mem_model = V_INFO_MM_CGA,
+    .vi_adp_opt = {
+      .switch_mode = vga_opt_switch_mode,
+      .clear_output = vga_opt_clear_output,
+      .set_palette = NULL,
+      .set_plane_mask = vga_opt_set_plane_mask,
+      .get_plane_mask = vga_opt_get_plane_mask,
+      .video_read = vga_opt_video_read_linear,
+      .video_write = vga_opt_video_write_linear
+    }
+  },
+  [VM_VGA_CG640] {
+    .vi_mode = VM_VGA_CG640,
+    .vi_flags = V_INFO_COLOR | V_INFO_GRAPHICS | V_INFO_PALLETE,
+    .vi_width = 640,
+    .vi_height = 480,
+    .vi_cwidth = 8,
+    .vi_cheight = 16,
+    .vi_line_width = 640,
+    .vi_scan_line = 80,
+    .vi_depth = 4,
+    .vi_planes = 4,
+    .vi_buffer = GRAPHICS_BUF_BASE,
+    .vi_buffer_size = GRAPHICS_BUF_SIZE,
+    .vi_mem_model = V_INFO_MM_PLANAR,
+    .vi_adp_opt = {
+      .switch_mode = vga_opt_switch_mode,
+      .clear_output = vga_opt_clear_output,
+      .set_palette = vga_opt_set_palette_16color,
+      .set_plane_mask = vga_opt_set_plane_mask,
+      .get_plane_mask = vga_opt_get_plane_mask,
+      .video_read = vga_opt_video_read_planes,
+      .video_write = vga_opt_video_write_planes
+    }
   },
   [VM_VGA_CG320] {
     .vi_mode = VM_VGA_CG320, 
-    .vi_flags = V_INFO_COLOR | V_INFO_GRAPHICS | V_INFO_PALLETE, 
+    .vi_flags = V_INFO_COLOR | V_INFO_GRAPHICS | V_INFO_PALLETE | V_INFO_LINEAR, 
     .vi_width = 320, 
     .vi_height = 200, 
     .vi_cwidth = 8, 
@@ -67,18 +127,18 @@ static VideoInfo vga_video_info[] = {
     .vi_planes = 1,
     .vi_buffer = GRAPHICS_BUF_BASE, 
     .vi_buffer_size = GRAPHICS_BUF_SIZE, 
-    .vi_mem_model = V_INFO_MM_PLANAR
+    .vi_mem_model = V_INFO_MM_CGA,
+    .vi_adp_opt = {
+      .switch_mode = vga_opt_switch_mode,
+      .clear_output = vga_opt_clear_output,
+      .set_palette = vga_opt_set_palette_256color,
+      .set_plane_mask = vga_opt_set_plane_mask,
+      .get_plane_mask = vga_opt_get_plane_mask,
+      .video_read = vga_opt_video_read_linear,
+      .video_write = vga_opt_video_write_linear
+    }
   },
   { EOT }
-};
-
-// ---- VGA adapter operation interfaces ----
-int vga_opt_switch_mode(VideoAdapter *va, int va_mode);
-int vga_opt_set_palette(VideoAdapter *va, ColorPalette *pal);
-
-static VideoAdapterOpt vga_opt = {
-  .switch_mode = vga_opt_switch_mode,
-  .set_palette = vga_opt_set_palette
 };
 
 // ---- VGA adapters ----
@@ -91,8 +151,7 @@ static VideoAdapter vga_video_adapters[] = {
     .va_flags = V_ADP_MODECHANGE | V_ADP_BOOTDISPLAY, 
     .va_buffer = 0, 
     .va_buffer_size = 0, 
-    .va_info = NULL, 
-    .va_opt = &vga_opt
+    .va_info = NULL
   },
   { EOT },
 };
@@ -108,146 +167,12 @@ int vga_probe_all() {
   return 0;
 }
 
-// ---- VGA mode details ----
-// Chris Giese <geezer@execpc.com>  http://my.execpc.com/~geezer
-#define VGA_AC_INDEX    0x3C0
-#define VGA_AC_WRITE    0x3C0
-#define VGA_AC_READ   0x3C1
-#define VGA_MISC_WRITE    0x3C2
-#define VGA_SEQ_INDEX   0x3C4
-#define VGA_SEQ_DATA    0x3C5
-#define VGA_DAC_READ_INDEX  0x3C7
-#define VGA_DAC_WRITE_INDEX 0x3C8
-#define VGA_DAC_DATA    0x3C9
-#define VGA_MISC_READ   0x3CC
-#define VGA_GC_INDEX    0x3CE
-#define VGA_GC_DATA     0x3CF
-/*      COLOR emulation   MONO emulation */
-#define VGA_CRTC_INDEX    0x3D4   /* 0x3B4 */
-#define VGA_CRTC_DATA   0x3D5   /* 0x3B5 */
-#define VGA_INSTAT_READ   0x3DA
-
-#define VGA_NUM_SEQ_REGS  5
-#define VGA_NUM_CRTC_REGS 25
-#define VGA_NUM_GC_REGS   9
-#define VGA_NUM_AC_REGS   21
-#define VGA_NUM_REGS    (1 + VGA_NUM_SEQ_REGS + VGA_NUM_CRTC_REGS + \
-        VGA_NUM_GC_REGS + VGA_NUM_AC_REGS)
-        
-static unsigned char g_80x25_text[] =
-{
-/* MISC */
-  0x67,
-/* SEQ */
-  0x03, 0x00, 0x03, 0x00, 0x02,
-/* CRTC */
-  0x5F, 0x4F, 0x50, 0x82, 0x55, 0x81, 0xBF, 0x1F,
-  0x00, 0x4F, 0x0D, 0x0E, 0x00, 0x00, 0x00, 0x50,
-  0x9C, 0x0E, 0x8F, 0x28, 0x1F, 0x96, 0xB9, 0xA3,
-  0xFF,
-/* GC */
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x0E, 0x00,
-  0xFF,
-/* AC */
-  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x14, 0x07,
-  0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
-  0x0C, 0x00, 0x0F, 0x08, 0x00
-};
-
-unsigned char g_640x480x2[] =
-{
-/* MISC */
-  0xE3,
-/* SEQ */
-  0x03, 0x01, 0x0F, 0x00, 0x06,
-/* CRTC */
-  0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0x0B, 0x3E,
-  0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0xEA, 0x0C, 0xDF, 0x28, 0x00, 0xE7, 0x04, 0xE3,
-  0xFF,
-/* GC */
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x0F,
-  0xFF,
-/* AC */
-  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x14, 0x07,
-  0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
-  0x01, 0x00, 0x0F, 0x00, 0x00
-};
-
-static unsigned char g_320x200x256[] =
-{
-/* MISC */
-  0x63,
-/* SEQ */
-  0x03, 0x01, 0x0F, 0x00, 0x0E,
-/* CRTC */
-  0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F,
-  0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x9C, 0x0E, 0x8F, 0x28, 0x40, 0x96, 0xB9, 0xA3,
-  0xFF,
-/* GC */
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
-  0xFF,
-/* AC */
-  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-  0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-  0x41, 0x00, 0x0F, 0x00, 0x00
-};
-
-static void write_regs(unsigned char *regs)
-{
-  unsigned i;
-
-  /* write MISCELLANEOUS reg */
-  outb(VGA_MISC_WRITE, *regs);
-  regs++;
-  /* write SEQUENCER regs */
-  for(i = 0; i < VGA_NUM_SEQ_REGS; i++)
-  {
-    outb(VGA_SEQ_INDEX, i);
-    outb(VGA_SEQ_DATA, *regs);
-    regs++;
-  }
-  /* unlock CRTC registers */
-  outb(VGA_CRTC_INDEX, 0x03);
-  outb(VGA_CRTC_DATA, inb(VGA_CRTC_DATA) | 0x80);
-  outb(VGA_CRTC_INDEX, 0x11);
-  outb(VGA_CRTC_DATA, inb(VGA_CRTC_DATA) & ~0x80);
-  /* make sure they remain unlocked */
-  regs[0x03] |= 0x80;
-  regs[0x11] &= ~0x80;
-  /* write CRTC regs */
-  for(i = 0; i < VGA_NUM_CRTC_REGS; i++)
-  {
-    outb(VGA_CRTC_INDEX, i);
-    outb(VGA_CRTC_DATA, *regs);
-    regs++;
-  }
-  /* write GRAPHICS CONTROLLER regs */
-  for(i = 0; i < VGA_NUM_GC_REGS; i++)
-  {
-    outb(VGA_GC_INDEX, i);
-    outb(VGA_GC_DATA, *regs);
-    regs++;
-  }
-  /* write ATTRIBUTE CONTROLLER regs */
-  for(i = 0; i < VGA_NUM_AC_REGS; i++)
-  {
-    (void)inb(VGA_INSTAT_READ);
-    outb(VGA_AC_INDEX, i);
-    outb(VGA_AC_WRITE, *regs);
-    regs++;
-  }
-  /* lock 16-color palette and unblank display */
-  (void)inb(VGA_INSTAT_READ);
-  outb(VGA_AC_INDEX, 0x20);
-}
-
 // ---- VGA adapter operation imhplements ----
+
 int vga_opt_probe(VideoAdapter *va) {
   int ret;
-  if (va->va_type != V_DEV_VGA) 
-    return EINVAL;
+  kassert(va->va_type == V_DEV_VGA);
+  
   if ((ret = vga_opt_switch_mode(va, VM_VGA_C80x25)) == 0) {
     ksetbit(va->va_flags, V_ADP_INITIALIZED | V_ADP_PROBED | V_ADP_ATTACHED);
     va_reg_adapter(va);
@@ -257,31 +182,17 @@ int vga_opt_probe(VideoAdapter *va) {
 
 int vga_opt_switch_mode(VideoAdapter* va, int va_mode)
 {
-  uint8_t *regs;
   VideoInfo *vi;
+  int ret;
   
-  if (va->va_type != V_DEV_VGA)
-    return EINVAL;
+  kassert(va->va_type == V_DEV_VGA);
+  kassert(kissetbit(va->va_flags, V_ADP_MODECHANGE));
   
-  if (!kissetbit(va->va_flags, V_ADP_MODECHANGE))
-    return EVMOPT;
-  
-  switch (va_mode) {
-    case VM_VGA_C80x25:
-      regs = g_80x25_text;
-      break;
-    case VM_VGA_BG640:
-      regs = g_640x480x2;
-      break;
-    case VM_VGA_CG320:
-      regs = g_320x200x256;
-      break;
-    default:
-      return EVMOPT;
-  }
+  extern int vga_opt_switch_mode_sub(VideoAdapter* va, int va_mode);
+  if ((ret = vga_opt_switch_mode_sub(va, va_mode)) != 0) 
+    return ret;
   
   vi = &(vga_video_info[va_mode]);
-  write_regs(regs);
   va->va_info = vi;
   va->va_buffer = (uint8_t*)KVADDR(vi->vi_buffer);
   va->va_buffer_size = vi->vi_buffer_size;
@@ -289,7 +200,33 @@ int vga_opt_switch_mode(VideoAdapter* va, int va_mode)
   return 0;
 }
 
-static inline int vga_opt_set_palette_sub(VideoAdapter* va, ColorPalette *pal) {
+int vga_opt_clear_output(VideoAdapter *va)
+{
+  int i;
+  if (va->va_info->vi_planes > 1) {
+    for (i=0; i<va->va_info->vi_planes; ++i) {
+      vga_opt_set_plane_mask(va, 1 << i);
+      memset(va->va_buffer, 0, va->va_buffer_size);
+    }
+    vga_opt_set_plane_mask(va, 0x1);
+  } else {
+    memset(va->va_buffer, 0, va->va_buffer_size);
+  }
+  
+  return 0;
+}
+
+// ---- Set palette routines ----
+
+#define PCORE_CHECK_VA_PALETTE() do { \
+  kassert(va->va_type == V_DEV_VGA); \
+  kassert(kissetbit(va->va_flags, V_INFO_PALLETE)); \
+  kassert(pal->fillsize == (1 << va->va_info->vi_depth)); \
+} while (0);
+
+int vga_opt_set_palette_16color(VideoAdapter* va, ColorPalette *pal) {
+  PCORE_CHECK_VA_PALETTE();
+  
   // Strange behaviour for 16-color palette in text mode:
   //  http://forum.osdev.org/viewtopic.php?p=192800#p192800
   int remap[0x40] = {
@@ -309,22 +246,13 @@ static inline int vga_opt_set_palette_sub(VideoAdapter* va, ColorPalette *pal) {
     outb_p(0x03c9, (c->g >> 2) & 0x3f);
     outb_p(0x03c9, (c->b >> 2) & 0x3f);
   }
+  
+  return 0;
 }
 
-int vga_opt_set_palette(VideoAdapter* va, ColorPalette* pal)
+int vga_opt_set_palette_256color(VideoAdapter* va, ColorPalette* pal)
 {
-  if (va->va_type != V_DEV_VGA)
-    return EINVAL;
-  if (!kissetbit(va->va_info->vi_flags, V_INFO_PALLETE))
-    return EVMOPT;
-  if (pal->fillsize != (1 << va->va_info->vi_depth))
-    return EVMOPT;
-  
-  // TODO: use spinlock to protect critical section.
-  if (va->va_info->vi_mode == VM_VGA_C80x25
-      /* && va->va_info->vi_depth == 4 */) {
-    return vga_opt_set_palette_sub(va, pal);
-  }
+  PCORE_CHECK_VA_PALETTE();
   
   RgbaColor *c = pal->data, *cend = pal->data + pal->fillsize;
   outb_p(0x03c8, 0);
@@ -336,4 +264,183 @@ int vga_opt_set_palette(VideoAdapter* va, ColorPalette* pal)
   }
   
   return 0;
+}
+
+int vga_opt_set_plane_mask(VideoAdapter *va, uint8_t plane_mask)
+{
+  outb(0x03c4, 0x2);
+  outb(0x03c5, plane_mask);
+  return 0;
+}
+
+int vga_opt_get_plane_mask(VideoAdapter *va, uint8_t *plane_mask)
+{
+  outb(0x03c4, 0x2);
+  *plane_mask = inb(0x03c5);
+  return 0;
+}
+
+// ---- Common video io routines ----
+#define PCORE_CHECK_VIDEO_IO()  do { \
+  kassert(va->va_type == V_DEV_VGA); \
+  kassert(kissetbit(va->va_flags, V_INFO_GRAPHICS)); \
+} while (0);
+
+#define PCORE_IO_MEMCPY(VABUF, DATABUF, SIZE, ISWRITE)  do { \
+  if (ISWRITE) { \
+    memcpy((VABUF), (DATABUF), (SIZE)); \
+  } else { \
+    memcpy((DATABUF), (VABUF), (SIZE)); \
+  } \
+} while (0);
+
+static inline int vga_opt_video_io_linear
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2, bool write)
+{
+  PCORE_CHECK_VIDEO_IO();
+
+  // If io region occupies whole columnes.
+  if (x1 == 0 && x2 == va->va_info->vi_width) {
+    PCORE_IO_MEMCPY(
+      va->va_buffer + va->va_info->vi_scan_line * y1, 
+      data,
+      (y2 - y1) * va->va_info->vi_scan_line,
+      write
+    );
+  }
+  
+  // Otherwise, we must deal with columnes in each line.
+  else {
+    ptrdiff_t init_skip, line_size;
+    
+    // note: as is required, color depth must be multiples of 8,
+    //       or 2^k.
+    
+    if (va->va_info->vi_depth >= 8) {
+      init_skip = y1 * va->va_info->vi_scan_line  // skip previous lines.
+        + x1 * (va->va_info->vi_depth >> 3);      // skip after columnes
+      line_size 
+        = (x2 - x1) * (va->va_info->vi_depth >> 3); // bytes each line copy.
+    } else {
+      int order;
+      // estimate each unit order.
+      switch (va->va_info->vi_depth) {
+        case 1: order = 0; break;
+        case 2: order = 1; break;
+        case 4: order = 2; break;
+        default: return EINVAL;
+      }
+      order = 3 - order;
+      // get the skip settings.
+      init_skip = y1 * va->va_info->vi_scan_line + (x1 >> order);
+      line_size = (x2 - x1) >> order;
+    }
+    
+    // The first unit affected. 
+    uint8_t *p, *d;
+    p = va->va_buffer + init_skip;
+    d = data;
+    
+    // loop for each line.
+    int i;
+    for (i = 0; 
+        i < y2 - y1;
+        ++i, p += va->va_info->vi_scan_line, d += line_size) {
+      PCORE_IO_MEMCPY(
+        p, 
+        d,
+        line_size,
+        write
+      );
+    }
+  }
+  
+  return 0;
+}
+
+int vga_opt_video_read_linear
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2)
+{
+  return vga_opt_video_io_linear(va, data, x1, y1, x2, y2, 0);
+}
+  
+int vga_opt_video_write_linear
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2)
+{
+  return vga_opt_video_io_linear(va, data, x1, y1, x2, y2, 1);
+}
+
+// ---- video io routines for vga12 ----
+int vga_opt_video_io_vga12
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2, bool write)
+{
+  PCORE_CHECK_VIDEO_IO();
+  
+  // Backup original plane mask.
+  int ret;
+  uint8_t origin_plane;
+  if ((ret = vga_opt_get_plane_mask(va, &origin_plane)) != 0)
+    return ret;
+  
+  // TODO: change following codes to meet the demands of all planar modes.
+  // Detect line size and line skip.
+  ptrdiff_t init_skip, line_size, line_skip;
+  
+  init_skip = y1 * va->va_info->vi_scan_line + (x1 >> 3);
+  line_size = (x2 - x1) >> 3;
+  line_skip = va->va_info->vi_scan_line - line_size;
+
+  // The reading & writing pointer.
+  uint8_t *p, *d;
+  
+  // copy by region.
+  int m, i;
+#undef GET_BIT
+#define GET_BIT(V, N) (((V) >> (N)) & 0x1)
+  
+  if (write) {
+    // loop for each plane.
+    for (m = 0; m < 4; ++m) {
+      vga_opt_set_plane_mask(va, 1 << m);
+      // Reset pointer to the first unit.
+      p = va->va_buffer + init_skip;
+      d = data;
+      // loop for each line.
+      for (i = 0; i < y2 - y1; ++i, p += line_skip) {
+        uint8_t *pend = p + ((x2 - x1) >> 3);
+        // loop for each group.
+        for (; p < pend; ++p, d += 4) {
+          *p = (GET_BIT(*d, m+4) << 7)
+              | (GET_BIT(*d, m) << 6)
+              | (GET_BIT(*(d+1), m+4) << 5)
+              | (GET_BIT(*(d+1), m) << 4)
+              | (GET_BIT(*(d+2), m+4) << 3)
+              | (GET_BIT(*(d+2), m) << 2)
+              | (GET_BIT(*(d+3), m+4) << 1)
+              | (GET_BIT(*(d+3), m) << 0);
+        }
+      }
+    }
+  } 
+  
+  else {
+    // TODO: finish read!
+  }
+  
+  // Restore original plane mask.
+  if ((ret = vga_opt_set_plane_mask(va, origin_plane)) != 0)
+    return ret;
+  
+  return 0;
+}
+
+int vga_opt_video_read_planes
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2)
+{
+  return vga_opt_video_io_vga12(va, data, x1, y1, x2, y2, 0);
+}
+int vga_opt_video_write_planes
+  (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2)
+{
+  return vga_opt_video_io_vga12(va, data, x1, y1, x2, y2, 1);
 }

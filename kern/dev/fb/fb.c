@@ -25,7 +25,12 @@ static inline VideoAdapter *va_get_next_entry(KListEntry *itm) {
 
 int va_init() {
   klist_init(&va_list);
-  return 0;
+  
+  // TODO: call probe for all type of devices.
+  int ret;
+  ret = vga_probe_all();
+  
+  return ret;
 }
 
 VideoAdapter *va_first() {

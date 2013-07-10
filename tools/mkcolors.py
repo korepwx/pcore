@@ -21,6 +21,12 @@ def make_code(name, comment, pal, size):
 print ('#include <color.h>')
 print ('')
 
+## gray 16 palette ##
+pal = [0] * 16
+for r in range(0, 16):
+  pal[r] = [int(r*(255/15.0))] * 3
+make_code('16Gray', '16 gray', pal, 16)
+
 ## console 16 palette ##
 # Browse MSDN for COLORREF to learn more about these RGB values
 pal = [
