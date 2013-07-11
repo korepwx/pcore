@@ -30,6 +30,7 @@ int vga_opt_set_palette_16color (VideoAdapter *va, ColorPalette *pal);
 int vga_opt_set_palette_256color(VideoAdapter *va, ColorPalette *pal);
 int vga_opt_set_plane_mask      (VideoAdapter *va, uint8_t mask);
 int vga_opt_get_plane_mask      (VideoAdapter *va, uint8_t *mask);
+int vga_opt_set_cursor          (VideoAdapter *va, int x, int y);
 
 int vga_opt_video_read_linear
   (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2);
@@ -63,7 +64,8 @@ static VideoInfo vga_video_info[] = {
       .clear_output = vga_opt_clear_output,
       .set_palette = vga_opt_set_palette_16color,
       .set_plane_mask = vga_opt_set_plane_mask,
-      .get_plane_mask = vga_opt_get_plane_mask
+      .get_plane_mask = vga_opt_get_plane_mask,
+      .set_cursor = vga_opt_set_cursor
     }
   },
   [VM_VGA_BG640] {
@@ -203,12 +205,17 @@ int vga_opt_switch_mode(VideoAdapter* va, int va_mode)
 int vga_opt_clear_output(VideoAdapter *va)
 {
   int i;
+  uint8_t origin_plane;
+  
   if (va->va_info->vi_planes > 1) {
+    if ((i = vga_opt_get_plane_mask(va, &origin_plane)) != 0)
+      return i;
     for (i=0; i<va->va_info->vi_planes; ++i) {
       vga_opt_set_plane_mask(va, 1 << i);
       memset(va->va_buffer, 0, va->va_buffer_size);
     }
-    vga_opt_set_plane_mask(va, 0x1);
+    if ((i = vga_opt_set_plane_mask(va, origin_plane)) != 0)
+      return i;
   } else {
     memset(va->va_buffer, 0, va->va_buffer_size);
   }
@@ -277,6 +284,17 @@ int vga_opt_get_plane_mask(VideoAdapter *va, uint8_t *plane_mask)
 {
   outb(0x03c4, 0x2);
   *plane_mask = inb(0x03c5);
+  return 0;
+}
+
+// ---- Hardware cursor support ----
+int vga_opt_set_cursor(VideoAdapter *va, int x, int y)
+{
+  uint16_t pos = y * va->va_info->vi_width + x;
+  outb(0x3D4, 0x0E);
+  outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
+  outb(0x3D4, 0x0F);
+  outb(0x3D5, (uint8_t)(pos & 0xFF));
   return 0;
 }
 
@@ -425,6 +443,27 @@ int vga_opt_video_io_vga12
   
   else {
     // TODO: finish read!
+    // clear output to zero.
+    memset(data, 0, ((x2 - x1) * (y2 - y1)) >> 1);
+    // loop for each plane.
+    for (m = 0; m < 4; ++m) {
+      vga_opt_set_plane_mask(va, 1 << m);
+      // Reset pointer to the first unit.
+      p = va->va_buffer + init_skip;
+      d = data;
+      // loop for each line.
+      for (i = 0; i < y2 - y1; ++i, p += line_skip) {
+        uint8_t *pend = p + ((x2 - x1) >> 3);
+        // loop for each group.xx
+        for (; p < pend; ++p) {
+          uint8_t v = *p;
+          *d++ |= (GET_BIT(v, 7) << (m + 4)) | (GET_BIT(v, 6) << (m));
+          *d++ |= (GET_BIT(v, 5) << (m + 4)) | (GET_BIT(v, 4) << (m));
+          *d++ |= (GET_BIT(v, 3) << (m + 4)) | (GET_BIT(v, 2) << (m));
+          *d++ |= (GET_BIT(v, 1) << (m + 4)) | (GET_BIT(v, 0) << (m));
+        }
+      }
+    }
   }
   
   // Restore original plane mask.

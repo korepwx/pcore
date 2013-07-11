@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <pcore/list.h>
 
-// Forward declaretions.
+// ---- Forward declaretions ----
 struct _VideoInfo;
 typedef struct _VideoInfo VideoInfo;
 struct _VideoAdapter;
@@ -61,6 +61,13 @@ struct _VideoAdapterOpt {
    * @return Zero if success.
    */
   int (*get_plane_mask)(VideoAdapter *va, uint8_t *mask);
+  
+  /**
+   * @brief Set the hardware cursor of video mode.
+   * @param pos: The position of cursor (pos = y * width + x).
+   * @return Zero if success.
+   */
+  int (*set_cursor)(VideoAdapter *va, uint16_t pos);
   
   // ---- The following are framebuffer IO routines ----
   
@@ -216,6 +223,9 @@ static inline int va_set_plane_mask(VideoAdapter* va, uint8_t mask) {
 }
 static inline int va_get_plane_mask(VideoAdapter* va, uint8_t *mask) {
   return PCORE_VA_CALL(get_plane_mask, (va, mask));
+}
+static inline int va_set_cursor(VideoAdapter* va, uint16_t pos) {
+  return PCORE_VA_CALL(set_cursor, (va, pos));
 }
 static inline int va_video_read
   (VideoAdapter* va, uint8_t *data, int x1, int y1, int x2, int y2)

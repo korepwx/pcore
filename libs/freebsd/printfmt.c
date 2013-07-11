@@ -38,6 +38,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdio.h>  // for EOF
 
 /* Max number conversion buffer length: a u_quad_t in base 2, plus NUL byte. */
 #define NBBY 8
@@ -115,9 +116,18 @@ static inline int imax(int a, int b) {
  *    ("%*D", len, ptr, " " -> XX XX XX XX ...
  */
 int
-kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_list ap)
+printfmt(char const *fmt, int (*func)(int, void*), void *arg, int radix, va_list ap)
 {
-#define PCHAR(c) {int cc=(c); if (func) (*func)(cc,arg); else *d++ = cc; retval++; }
+#define PCHAR(c) do { \
+  int cc=(c); \
+  if (func) { \
+    if ((*func)(cc,arg) == EOF) \
+      return retval; \
+  } else { \
+    *d++ = cc; \
+  } \
+  retval++; \
+} while (0);
   char nbuf[MAXNBUF];
   char *d;
   const char *p, *percent, *q;

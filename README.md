@@ -25,8 +25,11 @@ Directory structure:
     ..pcore           Headers only for kernel.
     kern              Impl for kernel.
     ..init            Impl for kernel main skeleton.
+    ..libs            Impl for kernel libs.
     libs              Impl for user/kernel.
     tools             Tools for pcore project.
+    usr               Impl for user.
+    ..libs            Impl for user libs.
     
 Use cmake 2.8 to generate Makefile.
 

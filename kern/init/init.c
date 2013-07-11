@@ -8,9 +8,11 @@
 // in the LICENSE file.
 
 #include <stddef.h>
+#include <string.h>
+#include <stdio.h>
+#include <asm/io.h>
 #include <dev/fb/fb.h>
-
-extern int test_dev_fb();
+#include <pcore/boot_cons.h>
 
 /**
  * @brief The entry point for pCore.
@@ -18,8 +20,18 @@ extern int test_dev_fb();
  */
 int kern_init()
 {
-  va_init();
-  test_dev_fb();
+  // Clear the memory space in PE image.
+  extern char edata[], end[];
+  memset(edata, 0, end - edata);
+  
+  // Early initialize the VGA output
+  va_init();        // initialize video adapters.
+  boot_cons_init(); // initialize boot console
+  
+  // Saying that we're loading.
+  puts("pCore loading ...\n");
+  
+  // Loop and prevent the kernel from exit.
   while (1) ;
 }
 
