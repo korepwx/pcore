@@ -30,7 +30,7 @@ int vga_opt_set_palette_16color (VideoAdapter *va, ColorPalette *pal);
 int vga_opt_set_palette_256color(VideoAdapter *va, ColorPalette *pal);
 int vga_opt_set_plane_mask      (VideoAdapter *va, uint8_t mask);
 int vga_opt_get_plane_mask      (VideoAdapter *va, uint8_t *mask);
-int vga_opt_set_cursor          (VideoAdapter *va, int x, int y);
+int vga_opt_set_cursor          (VideoAdapter *va, uint16_t pos);
 
 int vga_opt_video_read_linear
   (VideoAdapter *va, uint8_t *data, int x1, int y1, int x2, int y2);
@@ -288,9 +288,8 @@ int vga_opt_get_plane_mask(VideoAdapter *va, uint8_t *plane_mask)
 }
 
 // ---- Hardware cursor support ----
-int vga_opt_set_cursor(VideoAdapter *va, int x, int y)
+int vga_opt_set_cursor(VideoAdapter *va, uint16_t pos)
 {
-  uint16_t pos = y * va->va_info->vi_width + x;
   outb(0x3D4, 0x0E);
   outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
   outb(0x3D4, 0x0F);

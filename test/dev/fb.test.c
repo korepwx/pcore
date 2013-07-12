@@ -9,8 +9,6 @@
 
 #include <dev/fb/fb.h>
 
-static uint8_t buf[160 * 240];
-
 static inline void vga_640x480x16() 
 {
   extern uint8_t test_640x480x16_img[];

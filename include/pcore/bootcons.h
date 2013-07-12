@@ -1,4 +1,4 @@
-// @file: include/pcore/boot_cons.h
+// @file: include/pcore/bootcons.h
 // Copyright (c) 2013 Korepwx. All rights reserved.
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Contributors:
@@ -19,10 +19,14 @@
  */
 
 /// @brief Initialize the boot-up console.
-int boot_cons_init();
+int bootcons_init();
 
 /// @brief Clear boot-up console output and reset the cursor.
-int boot_cons_clear();
+int bootcons_clear();
+
+uint8_t bootcons_get_mode();
+void bootcons_set_mode(uint8_t mode);
+void bootcons_reset_mode();
 
 #endif  // __KERNEL__
 

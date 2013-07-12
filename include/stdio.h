@@ -30,7 +30,10 @@ int snprintf  (char *str, size_t size, const char* format, ...) __printf(3, 4);
 int vsnprintf (char *str, size_t size, const char* format, va_list ap);
 
 // Prototype for all printf methods.
-int printfmt(char const *fmt, int (*func)(int, void*), void *arg, int radix, 
-             va_list ap);
+int printfmt
+  (char const *fmt, int (*func)(int, void*), void *arg, int radix, ...)
+  __printf(1, 5);
+int vprintfmt
+  (char const *fmt, int (*func)(int, void*), void *arg, int radix, va_list ap);
 
 #endif // _INCLUDE_STDIO_H_E859E408E9F311E2A6A274E50BEE6214

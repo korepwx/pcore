@@ -25,7 +25,7 @@ int puts(const char* str) {
   int ret; \
   va_list ap; \
   va_start(ap, FMT); \
-  ret = printfmt(FMT, (PUTCHAR), (CTX), 10, ap); \
+  ret = vprintfmt(FMT, (PUTCHAR), (CTX), 10, ap); \
   va_end(ap);
 
 // ---- Console print methods ----
@@ -41,7 +41,7 @@ int printf(const char* format, ...)
 }
 int vprintf (const char* format, va_list ap)
 {
-  return printfmt(format, vprintf_putchar, NULL, 10, ap);
+  return vprintfmt(format, vprintf_putchar, NULL, 10, ap);
 }
 
 // ---- String print methods ----
@@ -90,7 +90,17 @@ int snprintf(char *str, size_t size, const char* format, ...)
 int vsnprintf(char *str, size_t size, const char* format, va_list ap) 
 {
   SPRINTF_INIT_CONTEXT(size);
-  int ret = printfmt(format, vsnprintf_putchar, &ctx, 10, ap);
+  int ret = vprintfmt(format, vsnprintf_putchar, &ctx, 10, ap);
   SPRINTF_CLEANUP();
 }
 
+int 
+printfmt(const char* fmt, int (*func) (int, void*), void* arg, int radix, ...)
+{
+  int ret;
+  va_list ap;
+  va_start(ap, radix);
+  ret = vprintfmt(fmt, func, arg, radix, ap);
+  va_end(ap);
+  return ret;
+}

@@ -1,4 +1,4 @@
-// @file: include/pcore/stdio.h
+// @file: arch/i386/include/asm/div64.h
 // Copyright (c) 2013 Korepwx. All rights reserved.
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Contributors:
@@ -7,17 +7,12 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-#ifndef _INCLUDE_PCORE_STDIO_H_67527C36EA0111E2ADB374E50BEE6214
-#define _INCLUDE_PCORE_STDIO_H_67527C36EA0111E2ADB374E50BEE6214
+#ifndef _ARCH_I386_INCLUDE_ASM_DIV64_H_4CCBA78EEA3811E2A4AA74E50BEE6214
+#define _ARCH_I386_INCLUDE_ASM_DIV64_H_4CCBA78EEA3811E2A4AA74E50BEE6214
 #pragma once
 
-#include <stdio.h>
+#include <stddef.h>
 
-void kset_putchar(int (*fp)(int));
-void kset_getchar(int (*fp)(void));
+// TODO: implement div64.
 
-#if defined(__KERNEL__)
-# define kprintf printf
-#endif  // __KERNEL__
-
-#endif // _INCLUDE_PCORE_STDIO_H_67527C36EA0111E2ADB374E50BEE6214
+#endif // _ARCH_I386_INCLUDE_ASM_DIV64_H_4CCBA78EEA3811E2A4AA74E50BEE6214

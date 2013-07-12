@@ -29,12 +29,4 @@ typedef __builtin_va_list va_list;
 #define va_end(ap) \
   __builtin_va_end(ap)
 
-// ---- Common vprintf declarations ----
-extern int vprintf(const char *format, va_list ap);
-extern int vsprintf(char *str, const char *format, va_list ap);
-extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-
-// ---- Core method that supports printf ----
-extern int kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_list ap);
-
 #endif // _INCLUDE_STDARG_H_9AF5C87CE55B11E2AC8274E50BEE6214

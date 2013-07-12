@@ -17,26 +17,26 @@
 
 __BEGIN_DECLS
 
-extern size_t strlen(const char* s);
-extern size_t strnlen(const char* s, size_t len);
+size_t strlen(const char* s);
+size_t strnlen(const char* s, size_t len);
 
-extern char* strcpy(char *dst, const char *src);
-extern char* strncpy(char *dst, const char *src, size_t n);
-extern char* strcat(char* dst, const char* src);
-//extern char* strncat(char* dst, const char* src, size_t n);
+char* strcpy(char *dst, const char *src);
+char* strncpy(char *dst, const char *src, size_t n);
+char* strcat(char* dst, const char* src);
+//char* strncat(char* dst, const char* src, size_t n);
 
-extern int strcmp(const char* s1, const char* s2);
-extern int stricmp(const char* s1, const char* s2);
-extern int strncmp(const char* s1, const char* s2, size_t n);
-extern int strnicmp(const char* s1, const char* s2, size_t n);
+int strcmp(const char* s1, const char* s2);
+int stricmp(const char* s1, const char* s2);
+int strncmp(const char* s1, const char* s2, size_t n);
+int strnicmp(const char* s1, const char* s2, size_t n);
 
-extern char *strchr(const char *s, char c);
-extern char *strfind(const char *s, char c);
+char *strchr(const char *s, char c);
+char *strfind(const char *s, char c);
 
-extern void *memset(void *s, char c, size_t n);
-extern void *memmove(void *dst, const void *src, size_t n);
-extern void *memcpy(void *dst, const void *src, size_t n);
-extern int memcmp(const void *v1, const void *v2, size_t n);
+void *memset(void *s, char c, size_t n);
+void *memmove(void *dst, const void *src, size_t n);
+void *memcpy(void *dst, const void *src, size_t n);
+int memcmp(const void *v1, const void *v2, size_t n);
 
 __END_DECLS
 

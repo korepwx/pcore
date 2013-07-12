@@ -14,7 +14,13 @@ project(pcore)
 # pCore Configuration
 #
 SET (PCORE_ARCH i386)
+SET (PCORE_OPTIMIZE ON)
 ADD_DEFINITIONS (-D__PCORE_ARCH_${PCORE_ARCH}__=1 -D__KERNEL__=1)
+
+# Following definition should only be turned on when -O2 is not applied.
+IF (NOT PCORE_OPTIMIZE)
+  ADD_DEFINITIONS (-D__PCORE_NO_OPTIMIZE__=1)
+ENDIF()
 
 # NOTE: When compiled under x86_64, __86_64__ should also be defined.
 #       When under pure 64bit, __LP64__ should be defined.
@@ -28,9 +34,16 @@ INCLUDE_DIRECTORIES (${CMAKE_CURRENT_LIST_DIR}/include)
 INCLUDE_DIRECTORIES (${CMAKE_CURRENT_LIST_DIR}/arch/${PCORE_ARCH}/include)
 
 # Compiler flags.
-SET (CMAKE_C_FLAGS "-g -Wall -O2 -ffreestanding -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector")
-SET (CMAKE_CXX_FLAGS "-g -Wall -O2 -ffreestanding -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector -fno-exceptions -fno-rtti")
-SET (CMAKE_ASM_FLAGS "-g -Wall -O2 -ffreestanding -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector")
+IF (PCORE_OPTIMIZE)
+  SET (PCORE_BASE_FLAGS "-g -O2 -Wall -ffreestanding -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector -fno-tree-scev-cprop")
+  SET (PCORE_CC_FLAGS "-g -O2 -Wall -ffreestanding -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector -fno-tree-scev-cprop -fno-exceptions -fno-rtti")
+ELSE()
+  SET (PCORE_BASE_FLAGS "-g -Wall -ffreestanding -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector -fno-tree-scev-cprop")
+  SET (PCORE_CC_FLAGS "-g -Wall -ffreestanding -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector -fno-tree-scev-cprop -fno-exceptions -fno-rtti")
+ENDIF()
+SET (CMAKE_C_FLAGS ${PCORE_BASE_FLAGS})
+SET (CMAKE_CXX_FLAGS ${PCORE_CC_FLAGS})
+SET (CMAKE_ASM_FLAGS ${PCORE_BASE_FLAGS})
 #SET (CMAKE_EXE_LINKER_FLAGS "-m elf_i386 -nostdlib")
 
 # Enable ASM (AT&T)
@@ -72,6 +85,13 @@ FILE (GLOB BOOTLOADER_SRCS boot/*.c boot/*.cc boot/*.S)
 ADD_LIBRARY (
   bootloader STATIC 
   ${BOOTLOADER_SRCS}
+)
+
+SET_TARGET_PROPERTIES (
+  bootloader
+  PROPERTIES 
+  COMPILE_FLAGS 
+  "-O2"
 )
 
 ADD_CUSTOM_TARGET (
@@ -120,7 +140,8 @@ ADD_CUSTOM_TARGET (
   DEPENDS kernel baselib
   COMMAND 
     ld -m elf_i386 -T${CMAKE_CURRENT_LIST_DIR}/tools/kernel.ld -o kernel.img ${CMAKE_BINARY_DIR}/libkernel.a ${CMAKE_BINARY_DIR}/libbaselib.a &&
-    objcopy --only-keep-debug kernel.img kernel.sym
+    objcopy --only-keep-debug kernel.img kernel.sym &&
+    objdump -S kernel.img > kernel.S
 )
 
 ###

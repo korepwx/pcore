@@ -11,8 +11,26 @@
 #include <string.h>
 #include <stdio.h>
 #include <asm/io.h>
+#include <asm/reg.h>
 #include <dev/fb/fb.h>
-#include <pcore/boot_cons.h>
+#include <pcore/bootcons.h>
+#include <pcore/kdebug.h>
+
+/// @brief Boot-up message for pCore.
+static inline void kern_greeting(void) 
+{
+  KImageDebugInfo imginfo;
+  kdebug_imageinfo(&imginfo);
+  
+  // Print greetings.
+  puts("Bad Apple OS kernel starts loading ...\n\n");
+  
+  // Print sysinfo.
+  printf("Kernel entry at 0x%08zX, memory footprint %zu KB, %s.\n", 
+         imginfo.entry_addr, (imginfo.mem_footprint + 1023) / 1024,
+         imginfo.optimized ? "optimized" : "non-optimized");
+  kdebug_printstackframe();
+}
 
 /**
  * @brief The entry point for pCore.
@@ -20,16 +38,16 @@
  */
 int kern_init()
 {
-  // Clear the memory space in PE image.
+  // Clear the memory space in ELF image.
   extern char edata[], end[];
   memset(edata, 0, end - edata);
   
   // Early initialize the VGA output
-  va_init();        // initialize video adapters.
-  boot_cons_init(); // initialize boot console
+  va_init();        // initialize video adapters
+  bootcons_init();  // initialize boot console
   
-  // Saying that we're loading.
-  puts("pCore loading ...\n");
+  // Saying that we're loading pCore.
+  kern_greeting();
   
   // Loop and prevent the kernel from exit.
   while (1) ;
