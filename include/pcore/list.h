@@ -39,6 +39,11 @@ static __always_inline void
   klist_add_before(item->next, itemToAdd);
 }
 
+static __always_inline void 
+    klist_add(KListEntry*item, KListEntry* itemToAdd) {
+  klist_add_before(item, itemToAdd);
+}
+
 static __always_inline void klist_remove(KListEntry* item) {
   item->prev->next = item->next;
   item->next->prev = item->prev;

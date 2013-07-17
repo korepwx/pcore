@@ -8,12 +8,15 @@
 // in the LICENSE file.
 
 #include <string.h>
+#include <stdio.h>
 #include <pcore/config.h>
-#include <pcore/stdio.h>
-#include <pcore/stab.h>
 #include <pcore/kdebug.h>
 #include <pcore/memlayout.h>
+#include <pcore/sync.h>
 #include <asm/reg.h>
+#include <asm/acpi.h>
+#include <asm/io.h>
+#include <asm/atomic.h>
 
 #define MAX_STACKFRAME_DEPTH 10
 
@@ -259,7 +262,8 @@ struct _KStackFrame
   void *retaddr;
 };
 
-int noinline kdebug_stackframe(int (*putchar)(int, void*), void* arg)
+static int inline kdebug_stackframe_sub
+  (int (*putchar)(int, void*), void* arg, const char* prefix)
 {
   int i, j;
   int ret, count = 0;
@@ -268,8 +272,8 @@ int noinline kdebug_stackframe(int (*putchar)(int, void*), void* arg)
   
 #if defined(__PCORE_NO_OPTIMIZE__)
   eip = read_eip();
-  PR(("Stackframe traced in non-optimized kernel (eip: 0x%08X):\n", 
-      putchar, arg, 10, eip));
+  PR(("%sStackframe traced in non-optimized kernel (eip: 0x%08X):\n", 
+      putchar, arg, 10, prefix, eip));
 #else
   // find "sub $N, %esp" in kdebug_stackframe in order to get correct 
   // "eip" from caller.  (I at least ensure the eip of on level).
@@ -283,15 +287,19 @@ int noinline kdebug_stackframe(int (*putchar)(int, void*), void* arg)
   }
   j += 16;  // Get rid of push eax, push ebx, push ecx & push edx.
   eip = *(uintptr_t*)(read_esp() + j);
+#if 1
+  eip -= 5; // the instruction to call kdebug_stackframe may be the last 
+            // one in a method, so just take the call instruction as eip.
+#endif
   // Show message about this address
-  PR(("Stackframe traced in optimized kernel (eip: 0x%08X):\n", 
-      putchar, arg, 10, eip));
+  PR(("%sStackframe traced in optimized kernel (eip: 0x%08X):\n", 
+      putchar, arg, 10, prefix, eip));
 #endif  // __PCORE_NO_OPTIMIZE__
   
   i = 0;
   do {
     if (kdebug_findmethod(eip, &info) != 0) {
-      PR(("  <unknow>: -- 0x%08x --\n", putchar, arg, 10, eip));
+      PR(("%s  <unknow>: -- 0x%08x --\n", putchar, arg, 10, prefix, eip));
     } else {
       // Obtain correct function name.
       char fnname[256];
@@ -300,23 +308,17 @@ int noinline kdebug_stackframe(int (*putchar)(int, void*), void* arg)
       memcpy(fnname, info.fn_name, fnname_len);
       fnname[fnname_len] = '\0';
       
-      // Obtain simplified filename.
-      int file_start_pos = 0;
-      int file_name_len = strlen(info.filename);
-      if (PCORE_BUILD_ROOT_SIZE < file_name_len && 
-          memcmp(PCORE_BUILD_ROOT, info.filename, PCORE_BUILD_ROOT_SIZE) == 0)
-        file_start_pos = PCORE_BUILD_ROOT_SIZE;
-      
       // Dump function info.
-      PR(("  %s:%d: %s+0x%x\n", putchar, arg, 10, 
-          info.filename + file_start_pos, info.lineno, 
+      PR(("%s  %s:%d: %s+0x%x\n", putchar, arg, 10, 
+          prefix, kdebug_shortpath(info.filename), info.lineno, 
           fnname, (int)(eip - info.fn_addr)));
       
 #if defined(__PCORE_NO_OPTIMIZE__)
       // Dump ebp, eip and arguments
       // (On gcc -O2, under most circumstances, these are wrong).
       uint32_t *args = (uint32_t *) ebp + 2;
-      PR(("    ebp: 0x%08x  eip: 0x%08x", putchar, arg, 10, ebp, eip));
+      PR(("%s    ebp: 0x%08x  eip: 0x%08x", putchar, arg, 10, 
+          prefix, ebp, eip));
       if (info.fn_narg > 0) {
         PR(("  args:", putchar, arg, 10));
         for (j=0; j<info.fn_narg; ++j) {
@@ -338,13 +340,49 @@ int noinline kdebug_stackframe(int (*putchar)(int, void*), void* arg)
   
   // Print "..." if not complete
   if (ebp != 0) {
-    PR(("  ...\n", putchar, arg, 10));
+    PR(("%s  ...\n", putchar, arg, 10, prefix));
   }
 
   return count;
 }
 
-int kdebug_putchar(int ch, void* arg)
+static int kdebug_putchar(int ch, void* arg)
 {
   return putchar(ch);
+}
+
+int noinline kdebug_stackframe(int (*putchar)(int, void*), void* arg) {
+  return kdebug_stackframe_sub(putchar, arg, "");
+}
+
+int noinline kdebug_printstackframe(void) {
+  return kdebug_stackframe_sub(kdebug_putchar, NULL, "");
+}
+
+// ---- kernel panic utility ----
+static volatile uint32_t has_dead = 0;
+
+void __kpanic(const char* file, int line, const char* fmt, ...)
+{
+  kintr_disable();
+  if (ktest_and_set_bit(1, &has_dead)) {
+    goto die;
+  }
+  
+  va_list ap;
+  va_start(ap, fmt);
+  printf("Kernel panic at %s:%d\n  ", kdebug_shortpath(file), line);
+  vprintf(fmt, ap);
+  printf("\n");
+  va_end(ap);
+  
+  // print stackframe.
+  kdebug_stackframe_sub(kdebug_putchar, NULL, "  ");
+  
+die:
+#if defined(PCORE_CPU_SUPPORT_STAY_IDLE)
+  kstay_idle();
+#else
+  while (1);
+#endif  // PCORE_CPU_SUPPORT_STAY_IDLE
 }

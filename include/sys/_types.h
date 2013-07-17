@@ -54,9 +54,13 @@ typedef uintptr_t size_t;
 typedef intptr_t  ssize_t;
 #endif  // _SIZE_T_DECLARED
 
+// ---- Time & clock types ----
+typedef uint64_t clock_t;
+
 // ---- Kernel specified types ----
 #if defined(__KERNEL__)
 
+typedef size_t ppn_t;
 
 #endif // __KERNEL__
 

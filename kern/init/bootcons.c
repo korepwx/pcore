@@ -10,8 +10,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <dev/fb/fb.h>
-#include <pcore/stdio.h>
 #include <pcore/bootcons.h>
+#include <pcore/serial.h>
+#include <pcore/sync.h>
 
 // ---- Boot console context ----
 struct _BootConsole {
@@ -27,7 +28,7 @@ typedef struct _BootConsole BootConsole;
 // ---- putchar for boot console ----
 static BootConsole bootcons;
 
-static int bootcons_putchar(int ch) 
+static void cons_putc(int ch)
 {
   ch = (ch & 0xff) | bootcons.mode;
   
@@ -63,6 +64,18 @@ static int bootcons_putchar(int ch)
   
   // update the hardware cursor.
   va_set_cursor(bootcons.va, bootcons.cursor);
+}
+
+static int bootcons_putchar(int ch) 
+{
+  bool intr_flag;
+  local_intr_save(intr_flag); 
+  {
+    cons_putc(ch);
+    serial_putchar(ch);  // put char into serial
+  }
+  local_intr_restore(intr_flag);
+  
   return 1;
 }
 

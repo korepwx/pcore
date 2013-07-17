@@ -1,5 +1,4 @@
-# ---- The main skeleton is derived from ucore/arch/i386/mm/memlayout.h ----
-#include <pcore/mmu.h>
+# ---- The main skeleton is derived from ucore ----
 #include <pcore/memlayout.h>
 
 #define REALLOC(x) (x - KERNBASE)

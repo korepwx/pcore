@@ -15,12 +15,15 @@ project(pcore)
 #
 SET (PCORE_ARCH i386)
 SET (PCORE_OPTIMIZE ON)
-ADD_DEFINITIONS (-D__PCORE_ARCH_${PCORE_ARCH}__=1 -D__KERNEL__=1)
+ADD_DEFINITIONS (-D__PCORE_ARCH_${PCORE_ARCH}__=1 -D__KERNEL__=1 -DSMP=1)
 
 # Following definition should only be turned on when -O2 is not applied.
 IF (NOT PCORE_OPTIMIZE)
   ADD_DEFINITIONS (-D__PCORE_NO_OPTIMIZE__=1)
 ENDIF()
+
+# For bad apple OS demonstration
+ADD_DEFINITIONS (-DPCORE_WAIT_ON_BOOT_GREETING=1)
 
 # NOTE: When compiled under x86_64, __86_64__ should also be defined.
 #       When under pure 64bit, __LP64__ should be defined.

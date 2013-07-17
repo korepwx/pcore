@@ -39,11 +39,13 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>  // for EOF
+#include <asm/div64.h>
 
 /* Max number conversion buffer length: a u_quad_t in base 2, plus NUL byte. */
 #define NBBY 8
 #define MAXNBUF (sizeof(intmax_t) * NBBY + 1)
 
+#if 0
 #if __WORDSIZE == 64
 typedef int64_t intmax_t;
 typedef uint64_t uintmax_t;
@@ -51,6 +53,10 @@ typedef uint64_t uintmax_t;
 typedef int32_t intmax_t;
 typedef uint32_t uintmax_t;
 #endif  // __WORDSIZE
+#endif 
+
+typedef int64_t intmax_t;
+typedef uint64_t uintmax_t;
 
 typedef unsigned char u_char;
 typedef unsigned int u_int;
@@ -76,9 +82,10 @@ ksprintn(char *nbuf, uintmax_t num, int base, int *lenp, int upper)
   p = nbuf;
   *p = '\0';
   do {
-    c = hex2ascii(num % (uintmax_t)base);
+    unsigned mod = do_div(num, base);
+    c = hex2ascii(mod);
     *++p = upper ? toupper(c) : c;
-  } while (num /= (intmax_t)base);
+  } while (num);
   if (lenp)
     *lenp = p - nbuf;
   return (p);

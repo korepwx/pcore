@@ -165,13 +165,13 @@ struct _VideoAdapter {
 #define V_DEV_VGA     4     // Video graphics adapter
   char *va_name;
   int va_flags;
-#define V_ADP_MODECHANGE (1 << 1)
-#define V_ADP_VESA  (1 << 4)
+#define V_ADP_MODECHANGE  (1 << 1)
+#define V_ADP_VESA        (1 << 4)
 #define V_ADP_BOOTDISPLAY (1 << 5)
-#define V_ADP_PROBED  (1 << 6)
+#define V_ADP_PROBED      (1 << 6)
 #define V_ADP_INITIALIZED (1 << 7)
-#define V_ADP_REGISTERED (1 << 8)
-#define V_ADP_ATTACHED  (1 << 9)
+#define V_ADP_REGISTERED  (1 << 8)
+#define V_ADP_ATTACHED    (1 << 9)
   uint8_t *va_buffer;      // Virtual address, set after switch mode.
   size_t va_buffer_size;
   VideoInfo *va_info;

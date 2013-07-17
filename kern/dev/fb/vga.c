@@ -13,7 +13,11 @@
 #include <errno.h>
 #include <assert.h>
 #include <asm/io.h>
-#include <pcore/memlayout.h>
+#include <pcore/pmm.h>
+
+// Korepwx: special hack; when VGA is setup, pmm has not been initialized.
+#undef KADDR
+#define KADDR(X)  (X + KERNBASE)
 
 // ---- VGA address & size contants -----
 #define EOT                 (-1)
@@ -176,7 +180,7 @@ int vga_opt_probe(VideoAdapter *va) {
   kassert(va->va_type == V_DEV_VGA);
   
   if ((ret = vga_opt_switch_mode(va, VM_VGA_C80x25)) == 0) {
-    ksetbit(va->va_flags, V_ADP_INITIALIZED | V_ADP_PROBED | V_ADP_ATTACHED);
+    ksetmask(va->va_flags, V_ADP_INITIALIZED | V_ADP_PROBED | V_ADP_ATTACHED);
     va_reg_adapter(va);
   }
   return ret;
@@ -188,7 +192,7 @@ int vga_opt_switch_mode(VideoAdapter* va, int va_mode)
   int ret;
   
   kassert(va->va_type == V_DEV_VGA);
-  kassert(kissetbit(va->va_flags, V_ADP_MODECHANGE));
+  kassert(kissetmask(va->va_flags, V_ADP_MODECHANGE));
   
   extern int vga_opt_switch_mode_sub(VideoAdapter* va, int va_mode);
   if ((ret = vga_opt_switch_mode_sub(va, va_mode)) != 0) 
@@ -196,7 +200,7 @@ int vga_opt_switch_mode(VideoAdapter* va, int va_mode)
   
   vi = &(vga_video_info[va_mode]);
   va->va_info = vi;
-  va->va_buffer = (uint8_t*)KVADDR(vi->vi_buffer);
+  va->va_buffer = (uint8_t*)KADDR(vi->vi_buffer);
   va->va_buffer_size = vi->vi_buffer_size;
   
   return 0;
@@ -227,7 +231,7 @@ int vga_opt_clear_output(VideoAdapter *va)
 
 #define PCORE_CHECK_VA_PALETTE() do { \
   kassert(va->va_type == V_DEV_VGA); \
-  kassert(kissetbit(va->va_flags, V_INFO_PALLETE)); \
+  kassert(kissetmask(va->va_flags, V_INFO_PALLETE)); \
   kassert(pal->fillsize == (1 << va->va_info->vi_depth)); \
 } while (0);
 
@@ -300,7 +304,7 @@ int vga_opt_set_cursor(VideoAdapter *va, uint16_t pos)
 // ---- Common video io routines ----
 #define PCORE_CHECK_VIDEO_IO()  do { \
   kassert(va->va_type == V_DEV_VGA); \
-  kassert(kissetbit(va->va_flags, V_INFO_GRAPHICS)); \
+  kassert(kissetmask(va->va_flags, V_INFO_GRAPHICS)); \
 } while (0);
 
 #define PCORE_IO_MEMCPY(VABUF, DATABUF, SIZE, ISWRITE)  do { \

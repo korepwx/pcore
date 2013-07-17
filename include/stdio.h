@@ -35,5 +35,11 @@ int printfmt
   __printf(1, 5);
 int vprintfmt
   (char const *fmt, int (*func)(int, void*), void *arg, int radix, va_list ap);
+  
+// Kernel specified utilities 
+#if defined(__KERNEL__)
+void kset_putchar(int (*fp)(int));
+void kset_getchar(int (*fp)(void));
+#endif  // __KERNEL__
 
 #endif // _INCLUDE_STDIO_H_E859E408E9F311E2A6A274E50BEE6214

@@ -50,9 +50,9 @@ void va_list_close() {
 }
 
 int va_reg_adapter(VideoAdapter* va) {
-  if (kissetbit(va->va_flags, V_ADP_REGISTERED))
+  if (kissetmask(va->va_flags, V_ADP_REGISTERED))
     return EINVAL;
-  ksetbit(va->va_flags, V_ADP_REGISTERED);
+  ksetmask(va->va_flags, V_ADP_REGISTERED);
   klist_add_before(&va_list, &(va->va_list));
   return 0;
 }

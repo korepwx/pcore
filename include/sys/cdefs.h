@@ -425,6 +425,7 @@
 #endif  // !FALSE
 
 #define __pure                __attribute__((pure))
+#define __noreturn            __attribute__((noreturn))
 #define __aligned(x)          __attribute__((aligned(x)))
 #define __printf(a, b)        __attribute__((format(printf, a, b)))
 #define __scanf(a, b)         __attribute__((format(scanf, a, b)))
@@ -439,29 +440,32 @@
 
 // Round down to the nearest multiple of N. 
 // Apply this macro on negative values will cause unspecified behaviours.
-#define K_ROUND_DOWN(X, N) ({                             \
-  (typeof(X))((X) - (X) % (N));                           \
-});
+#define K_ROUND_DOWN(X, N) ((typeof(X))((X) - (X) % (N)))
 
 // Round up to the nearest multiple of N.
 // Apply this macro on negative values will cause unspecified behaviours.
-#define K_ROUND_UP(X, N) ({                               \
-  (typeof(X))(ROUND_DOWN((X) + (N) - 1, (N)))             \
-});
+#define K_ROUND_UP(X, N) ((typeof(X))(K_ROUND_DOWN((X) + (N) - 1, (N))))
 
 // Round up the result of dividing N.
-#define K_ROUND_UP_DIV(X, N) ({                           \
-  (typeof(X))(((X) + (N) - 1) / (N))                      \
-});
+#define K_ROUND_UP_DIV(X, N) ((typeof(X))(((X) + (N) - 1) / (N)))
 
 // ---- Structure aid utilities ----
 #define koffsetof(TYPE, MEMBER) ((size_t)&((TYPE*)0)->MEMBER)
 #define ktostruct(PTR, TYPE, MEMBER) \
   ((TYPE*)((char*)(PTR) - koffsetof(TYPE, MEMBER)))
+#define karraysize(ARR) (sizeof((ARR))/sizeof((ARR)[0]))
+
+#define KCALL(X, METHOD, ARGS) ({                                 \
+  if (((X) -> METHOD) == 0) {                                     \
+    kpanic("Call unimplemented '" #METHOD "' on '" #X "'.");      \
+  }                                                               \
+  (X)->METHOD ARGS;                                               \
+})
   
-// ---- Flags & Bits ----
-#define ksetbit(V, B)       (V) |= (B)
-#define kunsetbit(V, B)     (V) &= ~(B)
-#define kissetbit(V, B)     ((V) & (B))
+// TODO: make the following atomic.
+#define ksetmask(V, M)    { (V) |= (M); }
+#define kunsetmask(V, M)  { (V) &= (~M); }
+#define kissetmask(V, M)  ( (V) & (M) )
+
 
 #endif   /* sys/cdefs.h */
