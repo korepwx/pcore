@@ -294,24 +294,23 @@ void kmalloc_cache_free_one(kmem_cache_t *s, slab_t *slab, void *objp)
 static inline 
 void* kmalloc_large(size_t size, gfp_t flags) 
 {
-  // I need to record the size of memory chunk.
-  unsigned int order = slub_get_order(size);
-  Page* page = kalloc_pages(1 << (order -  PAGE_SHIFT));
+  size_t page_count = (size + PGSIZE - 1) / PGSIZE;
+  Page *page = kalloc_pages(page_count);
   PageSetFlag(page, extraslab);
   PageSetFlag(page, property);
-  page->property = order;
+  page->property = page_count;
   return page2kva(page);
 }
 
 // Free large objects that are bigger than SLUB_MAX_SIZE
 static inline 
 void kfree_large(void* p) {
-  Page* page = kva2page(p);
-  size_t order = page->property;
+  Page *page = kva2page(p);
+  size_t page_count = page->property;
   assert(PageHasFlag(page, property));
   PageClearFlag(page, extraslab);
   PageClearFlag(page, property);
-  kfree_pages(page, 1 << (order - PAGE_SHIFT));
+  kfree_pages(page, page_count);
 }
 
 // Check Slub System.

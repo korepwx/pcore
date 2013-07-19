@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include <lz4.h>
 #include <dev/fb/fb.h>
 #include <asm/atomic.h>
@@ -25,6 +26,7 @@
 #define DST_HEIGHT 480
 #define FRAME_RATE 30
 #define PIC_FRAME_SIZE (DST_WIDTH * DST_HEIGHT / 2)
+#define PIC_PLANE_SIZE (PIC_FRAME_SIZE / 4)
 #define PIC_GROUP_SIZE (FRAME_RATE * PIC_FRAME_SIZE)
 
 // Playback status.
@@ -110,7 +112,6 @@ void badapple_main(void)
       int compress_size = *(int*)p;
       p += sizeof(int); ++group;
       if (compress_size == 0) {
-        va_switch_mode(va, VM_VGA_C80x25);
         va_clear_output(va);
         break;
       }
@@ -162,7 +163,17 @@ void badapple_sched(void)
   // Copy current frame out to VGA.
   uint8_t *frame = 
     buffers[sched_next_buffer].data  + PIC_FRAME_SIZE * sched_next_frame;
+    
+#if 0
   va_video_write(va, frame, 0, 0, DST_WIDTH, DST_HEIGHT);
+#endif
+
+  // Since I have already encoded video in plane mode, so memcpy to output.
+  int m;
+  for (m=0; m<4; ++m, frame += PIC_PLANE_SIZE) {
+    va_set_plane_mask(va, (1 << m));
+    memcpy(va->va_buffer, frame, PIC_PLANE_SIZE);
+  }
   
   if (++sched_next_frame >= 30) {
     int last_buffer = sched_next_buffer;

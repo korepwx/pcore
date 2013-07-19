@@ -154,13 +154,13 @@ ADD_CUSTOM_TARGET (
   pcore.img ALL
   DEPENDS kernel.img bootblock.img
   COMMAND
-    # Disk image should be 120MB in size.
-    dd if=/dev/zero of=${CMAKE_BINARY_DIR}/pcore.img count=245760 && 
+    # Disk image should be 200MB in size.
+    dd if=/dev/zero of=${CMAKE_BINARY_DIR}/pcore.img count=409600 && 
     # Put boot block in first sector.
     dd if=${CMAKE_BINARY_DIR}/bootblock.img of=${CMAKE_BINARY_DIR}/pcore.img obs=512 conv=notrunc &&
     # Put kernel image just after boot block.
     dd if=${CMAKE_BINARY_DIR}/kernel.img of=${CMAKE_BINARY_DIR}/pcore.img seek=1 obs=512 conv=notrunc &&
-    # Put Video block from 50M to ~110M
+    # Put Video block from 50M to ~140M
     dd if=${CMAKE_CURRENT_LIST_DIR}/video/badapple.dat of=${CMAKE_BINARY_DIR}/pcore.img seek=102400 obs=512 conv=notrunc
 )
 
@@ -179,7 +179,7 @@ ADD_CUSTOM_TARGET (
 # Launch qemu emulator commands
 #
 SET(QEMU_OPTS 
-  -m 256M -hda ${CMAKE_BINARY_DIR}/pcore.img
+  -m 300M -hda ${CMAKE_BINARY_DIR}/pcore.img
 )
 
 ADD_CUSTOM_TARGET(
