@@ -14,6 +14,7 @@
 #include <asm/reg.h>
 #include <asm/acpi.h>
 #include <dev/fb/fb.h>
+#include <dev/ide.h>
 #include <pcore/bootcons.h>
 #include <pcore/kdebug.h>
 #include <pcore/config.h>
@@ -83,6 +84,9 @@ int kern_init()
   
   // Enable the irq interrupts.
   kintr_enable();
+  
+  // Initialize the IDE disks.
+  ide_init();
   
   // Play BadApple video.
   badapple_main();

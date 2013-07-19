@@ -76,6 +76,11 @@ static void trap_dispatch(TrapFrame *tf)
       clock_inc();
       sched_run_timers();
       break;
+    // IDE disks.
+    case IRQ_OFFSET + IRQ_IDE1:
+    case IRQ_OFFSET + IRQ_IDE2:
+      /* do nothing */
+      break;
     // Unexpected trap.
     default:
       trap_printframe(tf);

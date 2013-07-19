@@ -138,6 +138,7 @@ void vm_destroy_proc(ProcVM *proc)
 
 // ---- Initialize the VMM system ----
 
+#if 0
 static void print_vma_struct(ProcVM *proc) {
   // Find the left-most node.
   RBNode *start = rb_leftmost(&(proc->mmap_root));
@@ -151,6 +152,7 @@ static void print_vma_struct(ProcVM *proc) {
   
   kfree(proc);
 }
+#endif
 
 static void check_vma_struct(void) {
   ProcVM *mm = vm_create_proc();

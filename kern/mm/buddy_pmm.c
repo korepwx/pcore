@@ -249,8 +249,7 @@ static size_t buddy_nr_free_pages(void) {
 }
 
 // ---- Test facility ----
-#if 0
-static void print_free(void) {
+void buddy_print_free(void) {
   size_t order;
   for (order = 0; order <= BUDDY_MAX_ORDER; ++order) {
     KListEntry *head = &(free_list(order)), *le;
@@ -264,7 +263,6 @@ static void print_free(void) {
     }
   }
 }
-#endif
 
 // note: buddy_check is derived from ucore.
 static void buddy_check(void) 

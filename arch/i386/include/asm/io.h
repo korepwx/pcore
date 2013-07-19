@@ -48,4 +48,21 @@ static inline void io_delay(void) {
 PCORE_MAKE_PORT_IO(b, char)
 PCORE_MAKE_PORT_IO(w, short)
 
+// TODO: merge insl into above.
+static inline void insl(uint32_t port, void *addr, int cnt)
+{
+  asm volatile ("cld;" "repne; insl;":"=D" (addr), "=c"(cnt)
+          :"d"(port), "0"(addr), "1"(cnt)
+          :"memory", "cc");
+}
+
+static inline void outsl(uint32_t port, const void *addr, int cnt) {
+  asm volatile (
+      "cld;"
+      "repne; outsl;"
+      : "=S" (addr), "=c" (cnt)
+      : "d" (port), "0" (addr), "1" (cnt)
+      : "memory", "cc");
+}
+
 #endif // _ARCH_I386_INCLUDE_ASM_IO_H_BBF7EDC8E4BD11E2A86974E50BEE6214

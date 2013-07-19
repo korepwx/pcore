@@ -154,27 +154,32 @@ ADD_CUSTOM_TARGET (
   pcore.img ALL
   DEPENDS kernel.img bootblock.img
   COMMAND
-    dd if=/dev/zero of=${CMAKE_BINARY_DIR}/pcore.img count=10240 &&
+    # Disk image should be 120MB in size.
+    dd if=/dev/zero of=${CMAKE_BINARY_DIR}/pcore.img count=245760 && 
+    # Put boot block in first sector.
     dd if=${CMAKE_BINARY_DIR}/bootblock.img of=${CMAKE_BINARY_DIR}/pcore.img obs=512 conv=notrunc &&
-    dd if=${CMAKE_BINARY_DIR}/kernel.img of=${CMAKE_BINARY_DIR}/pcore.img seek=1 obs=512 conv=notrunc
+    # Put kernel image just after boot block.
+    dd if=${CMAKE_BINARY_DIR}/kernel.img of=${CMAKE_BINARY_DIR}/pcore.img seek=1 obs=512 conv=notrunc &&
+    # Put Video block from 50M to ~110M
+    dd if=${CMAKE_CURRENT_LIST_DIR}/video/badapple.dat of=${CMAKE_BINARY_DIR}/pcore.img seek=102400 obs=512 conv=notrunc
 )
 
 ###
 # Disk image for VirtualBox emulator
 #
-ADD_CUSTOM_TARGET (
-  pcore.vmdk ALL
-  DEPENDS pcore.img
-  COMMAND
-    rm -rf ${CMAKE_BINARY_DIR}/pcore.vmdk &&
-    VBoxManage convertfromraw ${CMAKE_BINARY_DIR}/pcore.img ${CMAKE_BINARY_DIR}/pcore.vmdk --format vmdk
-)
+#ADD_CUSTOM_TARGET (
+#  pcore.vmdk ALL
+#  DEPENDS pcore.img
+#  COMMAND
+#    rm -rf ${CMAKE_BINARY_DIR}/pcore.vmdk &&
+#    VBoxManage convertfromraw ${CMAKE_BINARY_DIR}/pcore.img ${CMAKE_BINARY_DIR}/pcore.vmdk --format vmdk
+#)
 
 ###
 # Launch qemu emulator commands
 #
 SET(QEMU_OPTS 
-  -hda ${CMAKE_BINARY_DIR}/pcore.img
+  -m 256M -hda ${CMAKE_BINARY_DIR}/pcore.img
 )
 
 ADD_CUSTOM_TARGET(
