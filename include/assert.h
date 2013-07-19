@@ -38,5 +38,11 @@ void __kpanic(const char* file, int line, const char* fmt, ...)
 /// @brief The following assertion works everywhere but lacks any comments.
 #define kstatic_assert_weak(X) \
   { enum { assert_line_ ## __LINE__ = 1/(!!(X)) }; }
+  
+// Hack for kernel
+#if defined(__KERNEL__)
+# define panic kpanic
+# define assert kassert
+#endif  // __KERNEL__
 
 #endif // _INCLUDE_ASSERT_H_6DDD5AA2EB0111E28CAF74E50BEE6214

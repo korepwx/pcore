@@ -560,6 +560,22 @@ static void inline pgtable_init(void)
   check_boot_pgdir();
 }
 
+// ---- Following codes are used by pgdir_alloc_page ----
+// pgdir_alloc_page - call alloc_page & page_insert functions to 
+//                  - allocate a page size memory & setup an addr map
+//                  - pa<->la with linear address la and the PDT pgdir
+Page* pgdir_alloc_page(pde_t *pgdir, uintptr_t la, uint32_t perm) 
+{
+  Page *page = kalloc_page();
+  if (page != NULL) {
+    if (page_insert(pgdir, page, la, perm) != 0) {
+      kfree_page(page);
+      return NULL;
+    }
+  }
+  return page;
+}
+
 // ---- Following codes are used for print_pgdir ----
 //get_pgtable_items - In [left, right] range of PDT or PT, find a continuous linear addr space
 //                  - (left_store*X_SIZE~right_store*X_SIZE) for PDT or PT

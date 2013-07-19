@@ -86,6 +86,9 @@ static void readseg(uintptr_t va, uint32_t count, uint32_t offset)
 /* bootmain - the entry of bootloader */
 void bootmain(void)
 {
+  const char* badkernel = "B A D E L F ";
+  char* vgabuf = (char*)0xB8000;
+  
 	// read the 1st page off disk
 	readseg((uintptr_t) ELFHDR, SECTSIZE * 8, 0);
 
@@ -108,9 +111,16 @@ void bootmain(void)
 	((void (*)(void))(ELFHDR->e_entry & 0xFFFFFF)) ();
 
 bad:
+  // Show some error message.
+  while (*badkernel) {
+    *vgabuf++ = *badkernel++;
+  }
+
+#if 0
 	outw(0x8A00, 0x8A00);
 	outw(0x8A00, 0x8E00);
+#endif
 
 	/* do nothing */
-	while (1) ;
+  while (1) ;
 }

@@ -71,7 +71,8 @@ static int bootcons_putchar(int ch)
   bool intr_flag;
   local_intr_save(intr_flag); 
   {
-    cons_putc(ch);
+    if (!kissetmask(bootcons.va->va_info->vi_flags, V_INFO_GRAPHICS))
+      cons_putc(ch);
     serial_putchar(ch);  // put char into serial
   }
   local_intr_restore(intr_flag);

@@ -432,6 +432,7 @@
 #define __maybe_unused        __attribute__((unused))
 #define __always_unused       __attribute__((unused))
 #define __packed              __attribute__((packed))
+#define __unused              __attribute__((unused))
 
 // ---- Optimize memory barrier ----
 #define kbarrier()         __asm__ __volatile__("": : :"memory")

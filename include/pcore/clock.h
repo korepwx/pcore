@@ -26,6 +26,6 @@ void clock_reset(void);
 clock_t ksysclock(void);
 
 /// @brief Ticks in one second.
-#define CLOCKS_PER_SECOND   1000
+#define CLOCKS_PER_SECOND   30
 
 #endif // _INCLUDE_PCORE_CLOCK_H_4EFC188EEEC211E2A7DC53A987700B98

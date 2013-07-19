@@ -23,7 +23,7 @@ IF (NOT PCORE_OPTIMIZE)
 ENDIF()
 
 # For bad apple OS demonstration
-ADD_DEFINITIONS (-DPCORE_WAIT_ON_BOOT_GREETING=1)
+#ADD_DEFINITIONS (-DPCORE_WAIT_ON_BOOT_GREETING=1)
 
 # NOTE: When compiled under x86_64, __86_64__ should also be defined.
 #       When under pure 64bit, __LP64__ should be defined.
@@ -154,9 +154,20 @@ ADD_CUSTOM_TARGET (
   pcore.img ALL
   DEPENDS kernel.img bootblock.img
   COMMAND
-    dd if=/dev/zero of=${CMAKE_BINARY_DIR}/pcore.img count=10000 &&
+    dd if=/dev/zero of=${CMAKE_BINARY_DIR}/pcore.img count=10240 &&
     dd if=${CMAKE_BINARY_DIR}/bootblock.img of=${CMAKE_BINARY_DIR}/pcore.img obs=512 conv=notrunc &&
     dd if=${CMAKE_BINARY_DIR}/kernel.img of=${CMAKE_BINARY_DIR}/pcore.img seek=1 obs=512 conv=notrunc
+)
+
+###
+# Disk image for VirtualBox emulator
+#
+ADD_CUSTOM_TARGET (
+  pcore.vmdk ALL
+  DEPENDS pcore.img
+  COMMAND
+    rm -rf ${CMAKE_BINARY_DIR}/pcore.vmdk &&
+    VBoxManage convertfromraw ${CMAKE_BINARY_DIR}/pcore.img ${CMAKE_BINARY_DIR}/pcore.vmdk --format vmdk
 )
 
 ###

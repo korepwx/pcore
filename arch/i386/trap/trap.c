@@ -68,7 +68,8 @@ static void trap_dispatch(TrapFrame *tf)
   switch (tf->tf_trapno) {
     // Page fault.
     case T_PGFLT:
-      printf("Page fault!\n");
+      trap_printframe(tf);
+      kpanic("Unexpected page fault in kernel.");
       break;
     // Timer ticks.
     case IRQ_OFFSET + IRQ_TIMER:

@@ -231,7 +231,7 @@ int vga_opt_clear_output(VideoAdapter *va)
 
 #define PCORE_CHECK_VA_PALETTE() do { \
   kassert(va->va_type == V_DEV_VGA); \
-  kassert(kissetmask(va->va_flags, V_INFO_PALLETE)); \
+  kassert(kissetmask(va->va_info->vi_flags, V_INFO_PALLETE)); \
   kassert(pal->fillsize == (1 << va->va_info->vi_depth)); \
 } while (0);
 
@@ -304,7 +304,7 @@ int vga_opt_set_cursor(VideoAdapter *va, uint16_t pos)
 // ---- Common video io routines ----
 #define PCORE_CHECK_VIDEO_IO()  do { \
   kassert(va->va_type == V_DEV_VGA); \
-  kassert(kissetmask(va->va_flags, V_INFO_GRAPHICS)); \
+  kassert(kissetmask(va->va_info->vi_flags, V_INFO_GRAPHICS)); \
 } while (0);
 
 #define PCORE_IO_MEMCPY(VABUF, DATABUF, SIZE, ISWRITE)  do { \

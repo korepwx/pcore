@@ -298,8 +298,9 @@ void* kmalloc_large(size_t size, gfp_t flags)
   unsigned int order = slub_get_order(size + sizeof(size_t));
   Page* page = kalloc_pages(1 << (order -  PAGE_SHIFT));
   PageSetFlag(page, extraslab);
-  *(size_t*)page = order;
-  return (size_t*)page + 1;
+  void* mem = page2kva(page);
+  *(size_t*)mem = order;
+  return (size_t*)mem + 1;
 }
 
 // Free large objects that are bigger than SLUB_MAX_SIZE

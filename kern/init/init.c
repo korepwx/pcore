@@ -18,11 +18,13 @@
 #include <pcore/kdebug.h>
 #include <pcore/config.h>
 #include <pcore/pmm.h>
+#include <pcore/vmm.h>
 #include <pcore/trap.h>
 #include <pcore/picirq.h>
 #include <pcore/clock.h>
 #include <pcore/sync.h>
 #include <pcore/serial.h>
+#include <pcore/badapple.h>
 #include <assert.h>
 
 /// @brief Boot-up message for pCore.
@@ -73,11 +75,17 @@ int kern_init()
   // Initialize the hardware interrupts.
   pic_init();
   
+  // Initialize the virtual memory management.
+  vmm_init();
+  
   // Initialize the system clock.
   clock_init();
   
   // Enable the irq interrupts.
   kintr_enable();
+  
+  // Play BadApple video.
+  badapple_main();
   
   // Loop and prevent the kernel from exit.
   kstay_idle();

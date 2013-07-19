@@ -121,6 +121,7 @@ void page_remove(pde_t *pgdir, uintptr_t la);
 int page_insert(pde_t *pgdir, Page *page, uintptr_t la, uint32_t perm);
 
 void print_pgdir(void);
+Page* pgdir_alloc_page(pde_t *pgdir, uintptr_t la, uint32_t perm);
 
 
 #endif // _ARCH_I386_INCLUDE_MACHINE_PMM_H_312D35E0EB9311E2927C74E50BEE6214

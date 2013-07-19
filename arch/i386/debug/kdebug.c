@@ -298,7 +298,7 @@ static int inline kdebug_stackframe_sub
   
   i = 0;
   do {
-    if (kdebug_findmethod(eip, &info) != 0) {
+    if (kdebug_findmethod(eip - 5 /* locate call instruction */, &info) != 0) {
       PR(("%s  <unknow>: -- 0x%08x --\n", putchar, arg, 10, prefix, eip));
     } else {
       // Obtain correct function name.

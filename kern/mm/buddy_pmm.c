@@ -9,8 +9,12 @@
 
 #include <pcore/pmm.h>
 #include <pcore/list.h>
+#include <pcore/sync.h>
 #include <asm/bitops.h>
 #include <stdio.h>
+
+// Whether buddy system is in check.
+static int buddy_is_check = 0;
 
 // Buddy system manages page order from 1 to 18
 // which, 4K ~ 1G in memory size.
@@ -140,17 +144,23 @@ static Page* buddy_alloc_page_block(size_t order) {
 
 // Allocate desired size of pages from buddy system.
 static void buddy_free_pages(Page *base, size_t n);
-static Page* buddy_alloc_pages(size_t n) {
-  if (n == 0)
-    return NULL;
-  
-  size_t order = buddy_getorder(n);
-  size_t order_size = (1 << order);
 
-  Page* page = buddy_alloc_page_block(order);
-  if (page != NULL && n != order_size) {
-    buddy_free_pages(page + n, order_size - n);
+static Page* buddy_alloc_pages(size_t n) {
+  Page *page = NULL;
+  {
+    if (n == 0)
+      goto cleanup;
+    
+    size_t order = buddy_getorder(n);
+    size_t order_size = (1 << order);
+
+    page = buddy_alloc_page_block(order);
+    if (page != NULL && n != order_size) {
+      buddy_free_pages(page + n, order_size - n);
+    }
   }
+  
+cleanup:
   return page;
 }
 
@@ -259,6 +269,8 @@ static void print_free(void) {
 // note: buddy_check is derived from ucore.
 static void buddy_check(void) 
 {
+  buddy_is_check = 1;
+  
   int i;
   int count = 0, total = 0;
   for (i = 0; i <= BUDDY_MAX_ORDER; i++) {
@@ -340,6 +352,8 @@ static void buddy_check(void)
   }
   kassert(count == 0);
   kassert(total == 0);
+  
+  buddy_is_check = 0;
 }
 
 // ---- The buddy pmm instance ----
