@@ -13,6 +13,7 @@
 #include <string.h>
 #include <lz4.h>
 #include <dev/fb/fb.h>
+#include <dev/ide.h>
 #include <asm/atomic.h>
 #include <asm/io.h>
 #include <asm/barrier.h>
@@ -47,9 +48,54 @@ static SecondBuffer buffers[2];
 SpinLock sched_running;       // Indicate whether any sched is running.
 SpinLock sched_skip_counter;  // Lock on the sched_skip_frames.
 
+// Detect the environment to find a suitable data disk.
+static uint16_t ideno;
+static size_t   ideoff;
+
+static int badapple_detect_disk(void)
+{
+  // This is a swap partition on my laptop
+  #define  REAL_HARDWARE_FIRST_SECTOR   214843392  
+  #define  REAL_HARDWARE_DISK_NAME      "SAMSUNG SSD 830 Series"
+  // This is the hard disk of qemu.
+  #define  QEMU_EMMULATOR_FIRST_SECTOR  0
+  #define  QEMU_EMMULATOR_DISK_NAME     "QEMU HARDDISK"
+  
+  int ret;
+  
+  // Try to find Qemu HardDisk.
+  if ((ret = ide_find(QEMU_EMMULATOR_DISK_NAME)) != -1) {
+    ideno = (uint16_t)ret;
+    ideoff = QEMU_EMMULATOR_FIRST_SECTOR;
+    return 0;
+  } 
+  
+  // Try to find my ThinkPad T420 HardDisk.
+  if ((ret = ide_find(REAL_HARDWARE_DISK_NAME)) != -1) {
+    ideno = (uint16_t)ret;
+    ideoff = REAL_HARDWARE_FIRST_SECTOR;
+    return 0;
+  }
+  
+  // Panic that I cannot find a suitable Hard Disk.
+  printf("[badapple] No data disk found.\n");
+  return -1;
+}
+
 void badapple_main(void)
 {
   int i;
+  
+  // initialize the global flags.
+  sched_inited = 0;
+  sched_next_buffer = 0;
+  sched_skip_frames = 0;
+  spinlock_init(&sched_running);
+  spinlock_init(&sched_skip_counter);
+  
+  // Detect data disk.
+  if (badapple_detect_disk() != 0)
+    return;
   
   // Open VGA display.
   va = va_first();
@@ -58,11 +104,6 @@ void badapple_main(void)
   va_clear_output(va);
   
   // Initialize the buffers.
-  sched_next_buffer = 0;
-  sched_skip_frames = 0;
-  spinlock_init(&sched_running);
-  spinlock_init(&sched_skip_counter);
-  
   for (i=0; i<2; ++i) {
     atomic_set(&(buffers[i].ready), 0);
     buffers[i].data = kmalloc(PIC_GROUP_SIZE);
@@ -86,15 +127,14 @@ void badapple_main(void)
   } while (0);
   
   // Create video data memory jar.
-  uint8_t* video_compressed_data = (uint8_t*)kmalloc(BADAPPLE_VIDEO_DATA_SIZE);
-  printf("[badapple] Video compressed data in memory [0x%08x, 0x%08x].\n",
-         (size_t)video_compressed_data, 
-         (size_t)(video_compressed_data + BADAPPLE_VIDEO_DATA_SIZE)
-  );
+  uint8_t* video_compressed_data = 
+    (uint8_t*)kmalloc(BADAPPLE_VIDEO_DATA_SIZE * SECTSIZE);
 
   // Load video data from external disk.
-  if (kdisk_read(0, video_compressed_data, BADAPPLE_VIDEO_DATA_SIZE, 
-                 BADAPPLE_VIDEO_DATA_OFFSET) != 0) {
+  if (kdisk_read_secs(ideno, 
+                      video_compressed_data, 
+                      BADAPPLE_VIDEO_DATA_SIZE, 
+                      BADAPPLE_VIDEO_DATA_OFFSET + ideoff) != 0) {
     panic("[badapple] Cannot load video data from disk.\n");
   }
   printf("[badapple] Video data already loaded from disk.\n");
@@ -113,6 +153,7 @@ void badapple_main(void)
       p += sizeof(int); ++group;
       if (compress_size == 0) {
         va_clear_output(va);
+        printf("[badapple] All frames decoded, badapple_main exit.\n");
         break;
       }
       

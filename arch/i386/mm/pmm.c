@@ -18,10 +18,49 @@
 #include <errno.h>
 #include <asm/reg.h>
 
+// Fake E820Map via multiboot memory detection.
+static E820Map multiboot_fake_map;
+
+// Initialize the physical memory manager with multiboot information.
+void pmm_multiboot_init(multiboot_info_t* mbi)
+{
+  // Complete memory map is found.
+  if (mbi->flags & MULTIBOOT_INFO_MEM_MAP) {
+    multiboot_memory_map_t *mmap = 
+      (multiboot_memory_map_t*)(mbi->mmap_addr + KERNBASE);
+    multiboot_memory_map_t *mmap_end = 
+      (multiboot_memory_map_t*)((void*)mmap + mbi->mmap_length);
+    
+    int i = 0;
+    while (i < E820MAX && mmap < mmap_end) {
+      multiboot_fake_map.map[i].addr = mmap->addr;
+      multiboot_fake_map.map[i].size = mmap->len;
+      multiboot_fake_map.map[i].type = 
+        (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) ? (E820_ARM) : (E820_ARR);
+      mmap = (multiboot_memory_map_t*)
+        ((void*)mmap + mmap->size + sizeof(mmap->size));
+      ++i; 
+    }
+    multiboot_fake_map.nr_map = i;
+  }
+  
+  // Simple available memory range.
+  else if (mbi->flags & MULTIBOOT_INFO_MEMORY) {
+    multiboot_fake_map.nr_map = 1;
+    multiboot_fake_map.map[0].addr = mbi->mem_lower << 10;
+    multiboot_fake_map.map[0].size = (mbi->mem_upper - mbi->mem_lower) << 10;
+    multiboot_fake_map.map[0].type = E820_ARM;
+  }
+  
+  // No available memory map.
+  else {
+    kpanic("Cannot get memory info from multiboot.");
+  }
+}
+
 // Global status variables.
 size_t pmm_npage;   // page count.
 Page *pmm_pages;    // First page address.
-
 
 // Task State Segment:
 static struct taskstate ts = {0};
@@ -243,7 +282,10 @@ static int memory_bound_compare(const void* a, const void* b) {
 // Detect physical memory and build up page link.
 static void page_init()
 {
+#if 0
   E820Map *memmap = (E820Map*)(0x8000 + KERNBASE);
+#endif
+  E820Map *memmap = &multiboot_fake_map;
   uint64_t pmemsize = 0;
   
   // Gather all memory bounds for later process.
@@ -363,7 +405,9 @@ insert_mem:
     free_end = K_ROUND_DOWN(free_end, PGSIZE);
     
     if (free_beg < free_end) {
-      printf("[pmm] Found free memory [0x%010jx, 0x%010jx]\n", free_beg, free_end);
+      printf("[pmm] Found %d MB free memory [0x%08jx, 0x%08jx]\n", 
+             (int)((free_end - free_beg + 1048575) / 1048576), 
+             free_beg, free_end);
       insert_free_mem(pa2page(free_beg), (free_end - free_beg) / PGSIZE);
     }
   }  // for (bounds)

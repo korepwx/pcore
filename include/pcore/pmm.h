@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <assert.h>
 #include <asm/atomic.h>
+#include <boot/multiboot.h>
 
 // ---- PMM type declarations ----
 
@@ -58,6 +59,9 @@ struct _PMManager {
 typedef struct _PMManager PMManager;
 
 // ---- PMM utilities ----
+
+/// @brief Early initialize the physical memory manager via multiboot.
+void pmm_multiboot_init(multiboot_info_t* mbi);
 
 /**
  * @brief Initialize the physical memory manager.

@@ -265,6 +265,8 @@ struct _KStackFrame
 static int inline kdebug_stackframe_sub
   (int (*putchar)(int, void*), void* arg, const char* prefix)
 {
+  extern char __CODE_BEGIN__[], __CODE_END__[];
+  
   int i, j;
   int ret, count = 0;
   KMethodDebugInfo info;
@@ -287,10 +289,6 @@ static int inline kdebug_stackframe_sub
   }
   j += 16;  // Get rid of push eax, push ebx, push ecx & push edx.
   eip = *(uintptr_t*)(read_esp() + j);
-#if 1
-  eip -= 5; // the instruction to call kdebug_stackframe may be the last 
-            // one in a method, so just take the call instruction as eip.
-#endif
   // Show message about this address
   PR(("%sStackframe traced in optimized kernel (eip: 0x%08X):\n", 
       putchar, arg, 10, prefix, eip));
@@ -298,6 +296,10 @@ static int inline kdebug_stackframe_sub
   
   i = 0;
   do {
+    // Avoid tracing out of code range.
+    if (eip < (uintptr_t)__CODE_BEGIN__ || eip >= (uintptr_t)__CODE_END__)
+      break;
+    
     if (kdebug_findmethod(eip - 5 /* locate call instruction */, &info) != 0) {
       PR(("%s  <unknow>: -- 0x%08x --\n", putchar, arg, 10, prefix, eip));
     } else {

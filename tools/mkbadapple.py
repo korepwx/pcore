@@ -10,11 +10,14 @@
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
   
-import os
+import os, math
   
 # badapple config information.
-video_data_start = 50 * 1024 * 1024  # 50M.
+video_data_start = 102400  # in sector.
 video_data_size  = os.path.getsize('video/badapple.dat')
+
+# change size to sectors.
+video_data_size = int(video_data_size + 511) / 512
 
 # Make loading image.
 badapple_loading = 'video/loading.dat'

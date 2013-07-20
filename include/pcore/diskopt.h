@@ -21,4 +21,10 @@
  */
 int kdisk_read(uint16_t ideno, void* buffer, size_t size, size_t offset);
 
+/**
+ * @brief Read [@off, @off+@n) sectors from disk.
+ * @return Zero if success.
+ */
+int kdisk_read_secs(uint16_t ideno, void* buffer, size_t n, size_t off);
+
 #endif // _INCLUDE_PCORE_DISKOPT_H_CC0AC2F0F04611E2BB5B74E50BEE6214

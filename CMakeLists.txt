@@ -80,34 +80,6 @@ FILE (
 )
 
 ###
-# pCore BootLoader
-#
-
-FILE (GLOB BOOTLOADER_SRCS boot/*.c boot/*.cc boot/*.S)
-
-ADD_LIBRARY (
-  bootloader STATIC 
-  ${BOOTLOADER_SRCS}
-)
-
-SET_TARGET_PROPERTIES (
-  bootloader
-  PROPERTIES 
-  COMPILE_FLAGS 
-  "-O2"
-)
-
-ADD_CUSTOM_TARGET (
-  bootblock.img ALL
-  DEPENDS bootloader
-  COMMAND 
-    ld -m elf_i386 -T${CMAKE_CURRENT_LIST_DIR}/tools/boot.ld -o ${CMAKE_BINARY_DIR}/bootloader.img ${CMAKE_BINARY_DIR}/libbootloader.a &&
-    objcopy --only-keep-debug bootloader.img bootloader.sym &&
-    objcopy -S -O binary ${CMAKE_BINARY_DIR}/bootloader.img ${CMAKE_BINARY_DIR}/bootloader.img &&
-    python ${CMAKE_CURRENT_LIST_DIR}/tools/mkboot.py ${CMAKE_BINARY_DIR}/bootloader.img ${CMAKE_BINARY_DIR}/bootblock.img
-)
-
-###
 # pCore Kernel
 #
 
@@ -142,56 +114,53 @@ ADD_CUSTOM_TARGET (
   kernel.img ALL
   DEPENDS kernel baselib
   COMMAND 
-    ld -m elf_i386 -T${CMAKE_CURRENT_LIST_DIR}/tools/kernel.ld -o kernel.img ${CMAKE_BINARY_DIR}/libkernel.a ${CMAKE_BINARY_DIR}/libbaselib.a &&
+    ld -m elf_i386 --print-gc-sections -T${CMAKE_CURRENT_LIST_DIR}/tools/kernel.ld -o kernel.img 
+      ${CMAKE_BINARY_DIR}/libkernel.a ${CMAKE_BINARY_DIR}/libbaselib.a &&
     objcopy --only-keep-debug kernel.img kernel.sym &&
     objdump -S kernel.img > kernel.S
 )
 
 ###
-# Disk image for qemu emulator
+# Disk image for Bad Apple audio & video
 #
-ADD_CUSTOM_TARGET (
-  pcore.img ALL
-  DEPENDS kernel.img bootblock.img
+ADD_CUSTOM_TARGET(
+  badapple.img 
   COMMAND
-    # Disk image should be 200MB in size.
-    dd if=/dev/zero of=${CMAKE_BINARY_DIR}/pcore.img count=409600 && 
-    # Put boot block in first sector.
-    dd if=${CMAKE_BINARY_DIR}/bootblock.img of=${CMAKE_BINARY_DIR}/pcore.img obs=512 conv=notrunc &&
-    # Put kernel image just after boot block.
-    dd if=${CMAKE_BINARY_DIR}/kernel.img of=${CMAKE_BINARY_DIR}/pcore.img seek=1 obs=512 conv=notrunc &&
+    # Disk image should be 200 MB in size.
+    dd if=/dev/zero of=${CMAKE_BINARY_DIR}/badapple.img count=409600 &&
     # Put Video block from 50M to ~140M
-    dd if=${CMAKE_CURRENT_LIST_DIR}/video/badapple.dat of=${CMAKE_BINARY_DIR}/pcore.img seek=102400 obs=512 conv=notrunc
+    dd if=${CMAKE_CURRENT_LIST_DIR}/video/badapple.dat of=${CMAKE_BINARY_DIR}/badapple.img 
+      seek=102400 obs=512 conv=notrunc
 )
 
 ###
-# Disk image for VirtualBox emulator
+# Bootable iso which contains the kernel
 #
-#ADD_CUSTOM_TARGET (
-#  pcore.vmdk ALL
-#  DEPENDS pcore.img
-#  COMMAND
-#    rm -rf ${CMAKE_BINARY_DIR}/pcore.vmdk &&
-#    VBoxManage convertfromraw ${CMAKE_BINARY_DIR}/pcore.img ${CMAKE_BINARY_DIR}/pcore.vmdk --format vmdk
-#)
+ADD_CUSTOM_TARGET(
+  bootable.iso ALL
+  DEPENDS kernel.img
+  COMMAND
+    cp ${CMAKE_BINARY_DIR}/kernel.img ${CMAKE_BINARY_DIR}/iso/kernel.img &&
+    grub-mkrescue -o ${CMAKE_BINARY_DIR}/bootable.iso ${CMAKE_BINARY_DIR}/iso
+)
 
 ###
 # Launch qemu emulator commands
 #
 SET(QEMU_OPTS 
-  -m 300M -hda ${CMAKE_BINARY_DIR}/pcore.img
+  -m 300M -kernel ${CMAKE_BINARY_DIR}/kernel.img -hda ${CMAKE_BINARY_DIR}/badapple.img
 )
 
 ADD_CUSTOM_TARGET(
   qemu
-  DEPENDS pcore.img
+  DEPENDS kernel.img
   COMMAND
     qemu-system-i386 -parallel stdio ${QEMU_OPTS} -serial null 
 )
 
 ADD_CUSTOM_TARGET(
   debug
-  DEPENDS pcore.img
+  DEPENDS kernel.img
   COMMAND
     cp ${CMAKE_CURRENT_LIST_DIR}/tools/gdbinit ${CMAKE_BINARY_DIR}/gdbinit &&
     cp ${CMAKE_CURRENT_LIST_DIR}/tools/run-gdb.sh ${CMAKE_BINARY_DIR}/run-gdb.sh &&

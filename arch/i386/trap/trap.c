@@ -71,6 +71,15 @@ static void trap_dispatch(TrapFrame *tf)
       trap_printframe(tf);
       kpanic("Unexpected page fault in kernel.");
       break;
+    // Com & keyboard.
+    case IRQ_OFFSET + IRQ_COM1:
+    case IRQ_OFFSET + IRQ_KBD:
+      /* do nothing */
+      break;
+    // Parallel port.
+    case IRQ_OFFSET + IRQ_LPT1:
+      /* do nothing */
+      break;
     // Timer ticks.
     case IRQ_OFFSET + IRQ_TIMER:
       clock_inc();

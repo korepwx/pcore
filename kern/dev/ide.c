@@ -7,6 +7,7 @@
 #include <dev/ide.h>
 #include <asm/io.h>
 #include <assert.h>
+#include <string.h>
 
 #define ISA_DATA                0x00
 #define ISA_ERROR               0x01
@@ -73,6 +74,17 @@ static int ide_wait_ready(uint16_t iobase, bool check_error) {
     return -1;
   }
   return 0;
+}
+
+int ide_find(const char* model) {
+  int i;
+  for (i=0; i<karraysize(ide_devices); ++i) {
+    if (ide_devices[i].valid) {
+      if (strcmp(model, (const char*)ide_devices[i].model) == 0)
+        return i;
+    }
+  }
+  return -1;
 }
 
 void ide_init(void) {
@@ -172,7 +184,7 @@ int ide_read_secs(uint16_t ideno, uint32_t secno, void *dst, size_t nsecs) {
   int ret = 0;
   for (; nsecs > 0; nsecs --, dst += SECTSIZE) {
     if ((ret = ide_wait_ready(iobase, 1)) != 0) {
-        goto out;
+      goto out;
     }
     insl(iobase, dst, SECTSIZE / sizeof(uint32_t));
   }

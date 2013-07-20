@@ -16,6 +16,8 @@
 #define SECTSIZE 512
 
 void ide_init(void);
+int ide_find(const char* model);
+
 bool ide_device_valid(uint16_t ideno);
 size_t ide_device_size(uint16_t ideno);
 

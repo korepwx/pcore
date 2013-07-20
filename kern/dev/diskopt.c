@@ -39,20 +39,6 @@ int kdisk_read(uint16_t ideno, void* buffer, size_t size, size_t offset)
     buffer += count; size -= count; ++secbeg;
   }
   
-  /*// Read 4, 2, 1 secs.
-  int secnum = 4;
-  for (; secnum > 0; secnum >>= 1) {
-    int count = secnum * SECTSIZE;
-    while (size >= count) {
-      local_intr_save(intr_flag);
-      {
-        ide_read_secs(ideno, secbeg, buffer, secnum);
-      }
-      local_intr_restore(intr_flag);
-      buffer += count; size -= count; secbeg += secnum;
-    }
-  }*/
-  
   size_t nsecs = size / SECTSIZE;
   do {
     size_t secnum = (nsecs > MAX_NSECS) ? (MAX_NSECS) : (nsecs);
@@ -80,5 +66,26 @@ int kdisk_read(uint16_t ideno, void* buffer, size_t size, size_t offset)
   }
   
   // Return success.
+  return 0;
+}
+
+int kdisk_read_secs(uint16_t ideno, void* buffer, size_t n, size_t off)
+{
+  bool intr_flag;
+  
+  do {
+    size_t secnum = (n > MAX_NSECS) ? (MAX_NSECS) : (n);
+    
+    local_intr_save(intr_flag);
+    {
+      ide_read_secs(ideno, off, buffer, secnum);
+    }
+    local_intr_restore(intr_flag);
+    
+    off += secnum;
+    n -= secnum;
+    buffer += SECTSIZE * secnum; 
+  } while (n > 0);
+  
   return 0;
 }

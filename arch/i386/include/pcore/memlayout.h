@@ -408,7 +408,7 @@ typedef uintptr_t pde_t;
 typedef pte_t swap_entry_t; //the pte can also be a swap entry
 
 // some constants for bios interrupt 15h AX = 0xE820
-#define E820MAX             20  // number of entries in E820MAP
+#define E820MAX             32  // number of entries in E820MAP
 #define E820_ARM            1   // address range memory
 #define E820_ARR            2   // address range reserved
 

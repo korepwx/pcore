@@ -15,6 +15,7 @@
 #include <asm/acpi.h>
 #include <dev/fb/fb.h>
 #include <dev/ide.h>
+#include <boot/multiboot.h>
 #include <pcore/bootcons.h>
 #include <pcore/kdebug.h>
 #include <pcore/config.h>
@@ -27,6 +28,17 @@
 #include <pcore/serial.h>
 #include <pcore/badapple.h>
 #include <assert.h>
+
+/// @brief Initialize kernel from multiboot.
+static inline void kern_multiboot
+  (multiboot_info_t* mbi, uint32_t magic)
+{
+  // Print bootloader magic.
+  if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
+    kpanic("This kernel requires a multiboot campatible bootloader!");
+  }
+  pmm_multiboot_init(mbi);
+}
 
 /// @brief Boot-up message for pCore.
 static inline void kern_greeting(void) 
@@ -53,16 +65,19 @@ static inline void kern_greeting(void)
  * @brief The entry point for pCore.
  * kern_init is called by kern_entry. @sa arch/<platform-depended>/init/entry.S
  */
-int kern_init()
+int kern_init(multiboot_info_t* mbi, uint32_t magic)
 {
-  // Clear the memory space in ELF image.
+  // Now we can clear the kernel memory space.
   extern char edata[], end[];
   memset(edata, 0, end - edata);
-  
+
   // Early initialize the VGA output
   va_init();        // initialize video adapters
   serial_init();    // initialize the serial ports.
   bootcons_init();  // initialize boot console
+  
+  // Collect multiboot information.
+  kern_multiboot(mbi, magic);
   
   // Saying that we're loading pCore.
   kern_greeting();
