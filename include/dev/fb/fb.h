@@ -185,22 +185,22 @@ struct _VideoAdapter {
  * @brief Initialize the video adapter system.
  * @return Zero if success.
  */
-extern int va_init();
+int va_init();
 
 /// @brief Get the first video adapter, but not lock on list.
-extern VideoAdapter *va_first();
+VideoAdapter *va_first();
 
 /// @brief Open video adapter list for enumerate, and return the first item.
-extern VideoAdapter *va_list_open();
+VideoAdapter *va_list_open();
 
 /// @brief Get the next video adapter in list.
-extern VideoAdapter *va_list_next(VideoAdapter *va);
+VideoAdapter *va_list_next(VideoAdapter *va);
 
 /// @brief Close video adapter list.
-extern void va_list_close();
+void va_list_close();
 
 /// @brief Register a video adapter into list.
-extern int va_reg_adapter(VideoAdapter *va);
+int va_reg_adapter(VideoAdapter *va);
 
 // ---- Wrappers for va operations ----
 #define PCORE_VA_CALL(METHOD, PARAMS)  \

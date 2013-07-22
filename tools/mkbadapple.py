@@ -15,9 +15,12 @@ import os, math
 # badapple config information.
 video_data_start = 102400  # in sector.
 video_data_size  = os.path.getsize('video/badapple.dat')
+audio_data_start = 1
+audio_data_size  = os.path.getsize('video/audio.dat')
 
 # change size to sectors.
 video_data_size = int(video_data_size + 511) / 512
+audio_data_size = int(audio_data_size + 511) / 512
 
 # Make loading image.
 badapple_loading = 'video/loading.dat'
@@ -37,6 +40,8 @@ with open(badapple_loading_csrc, 'wb') as cf:
 badapple_header = 'include/pcore/badapple_config.h'
 with open(badapple_header, 'wb') as cf:
   cf.write('#ifndef __BADAPPLE_CONFIG_H\n#define __BADAPPLE_CONFIG_H\n\n')
+  cf.write('#define BADAPPLE_AUDIO_DATA_SIZE   %s\n' % audio_data_size)
+  cf.write('#define BADAPPLE_AUDIO_DATA_OFFSET %s\n' % audio_data_start)
   cf.write('#define BADAPPLE_VIDEO_DATA_SIZE   %s\n' % video_data_size)
   cf.write('#define BADAPPLE_VIDEO_DATA_OFFSET %s\n' % video_data_start)
   cf.write('\nextern uint8_t badapple_loading_image[];\n')

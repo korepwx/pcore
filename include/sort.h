@@ -25,4 +25,21 @@
 int insertion_sort(void* base, size_t nmemb, size_t size,
                    int (*compar)(const void*, const void*));
 
+/**
+ * @brief Find the first element which is not less than the expected value.
+ */
+void* lower_bound(void* first, size_t nmemb, size_t size, const void* key, 
+                  int (*compar)(const void* v, const void* key));
+
+/**
+ * @brief Get the position of expected value in the range.
+ */
+static inline void* binary_find(void* first, size_t nmemb, size_t size, 
+                                const void* key, 
+                                int (*compar)(const void* v, const void* key))
+{
+  first = lower_bound(first, nmemb, size, key, compar);
+  return (first != NULL && compar(first, key) == 0) ? first : NULL;
+}
+
 #endif // _INCLUDE_SORT_H_A1E8584AEDBF11E2956874E50BEE6214

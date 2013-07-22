@@ -45,8 +45,10 @@ typedef struct {
 
 static SecondBuffer buffers[2];
 
-SpinLock sched_running;       // Indicate whether any sched is running.
-SpinLock sched_skip_counter;  // Lock on the sched_skip_frames.
+// Indicate whether any sched is running.
+SpinLock sched_running = SPIN_LOCK_INITIALIZER(0);
+// Lock on the sched_skip_frames.
+SpinLock sched_skip_counter = SPIN_LOCK_INITIALIZER(0);
 
 // Detect the environment to find a suitable data disk.
 static uint16_t ideno;
@@ -87,11 +89,8 @@ void badapple_main(void)
   int i;
   
   // initialize the global flags.
-  sched_inited = 0;
   sched_next_buffer = 0;
   sched_skip_frames = 0;
-  spinlock_init(&sched_running);
-  spinlock_init(&sched_skip_counter);
   
   // Detect data disk.
   if (badapple_detect_disk() != 0)

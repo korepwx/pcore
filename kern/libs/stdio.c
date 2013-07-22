@@ -31,6 +31,11 @@ void kget_putchar(int (*fp)(void)) {
   kgetchar = fp;
 }
 
+void kstdio_shutdown(void) {
+  kputchar = kputchar_null;
+  kgetchar = kgetchar_null;
+}
+
 // Implement basic getchar & putchar
 int putchar(int ch) {
   return kputchar(ch);

@@ -380,6 +380,7 @@ void __kpanic(const char* file, int line, const char* fmt, ...)
   
   // print stackframe.
   kdebug_stackframe_sub(kdebug_putchar, NULL, "  ");
+  kstdio_shutdown();
   
 die:
 #if defined(PCORE_CPU_SUPPORT_STAY_IDLE)

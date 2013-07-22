@@ -21,6 +21,7 @@ if [ ! -f "video/badapple.dat" ]; then
 fi
 
 # Copy video data into /dev/sdb3 (from 50M to ~140M).
+dd if=video/audio.dat of=/dev/sdb3 seek=1 obs=512
 dd if=video/badapple.dat of=/dev/sdb3 seek=102400 obs=512
 
 

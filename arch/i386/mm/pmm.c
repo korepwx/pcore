@@ -164,11 +164,11 @@ pte_t *get_pte(pde_t *pgdir, uintptr_t la, bool create)
     *pde = pa | PTE_P | PTE_W | PTE_U;
   }
   
-  return &((pde_t*)
+  return &(((pde_t*)
     KADDR(
-      PDE_ADDR(*pde)          // Remove the flags along with PTE address.
+      PTE_ADDR(*pde)          // Remove the flags along with PTE address.
     )                         // Get the virtual address of PTE page.
-  )[PTX(la)];                 // Access the PTE entity.
+  )[PTX(la)]);                // Access the PTE entity.
 }
 
 //get_page - get related Page struct for linear address la using PDT pgdir
@@ -723,4 +723,25 @@ void kfree_pages(Page* base, size_t n) {
 
 size_t kfree_page_count(void) {
   return KCALL(&pmm, nr_free_pages, ());
+}
+
+// ---- Map memory based IO ports ----
+// NOTE: hacked for early usage by Korepwx.
+void pmm_iomap(uintptr_t kvaddr, uintptr_t ioaddr, size_t size)
+{
+  uintptr_t kvaddr_round = K_ROUND_DOWN(kvaddr, PGSIZE);
+  size = size + (kvaddr - kvaddr_round);
+  size = K_ROUND_UP(size, PGSIZE);
+  
+  kvaddr = kvaddr_round;
+  ioaddr = K_ROUND_DOWN(ioaddr, PGSIZE);
+  
+  printf("[hda] memory mapped ports [0x%08x, 0x%08x] -> 0x%08x.\n",
+         kvaddr, kvaddr + size, ioaddr);
+  while (size > 0) {
+    *get_pte(pmm_boot_pgdir, kvaddr, 1) = (ioaddr | PTE_P | PTE_W);
+    kvaddr += PGSIZE;
+    ioaddr += PGSIZE;
+    size -= PGSIZE;
+  }
 }

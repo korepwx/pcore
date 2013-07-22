@@ -41,3 +41,31 @@ int insertion_sort(void* base, size_t nmemb, size_t size,
   
   return 0;
 }
+
+void* lower_bound(void* first, size_t nmemb, size_t size, const void* key, 
+                  int (*compar)(const void*, const void*))
+{
+  ptrdiff_t p;
+  void *it, *last = first + nmemb * size;
+  void *nil = last;
+  
+  // We want to search for the last *it < v in the range [first, last).
+  // + If last == first, we return last (indicating not found).
+  // + If last == first + 1, we return last if (*first < v), else first.
+  while (last > first) {
+    // Otherwise we start to examine [first, last)
+    p = ((last - first) / size) / 2;
+    it = first + p * size; // it should be at least first + 1 if not the above situations.
+    // Here we consider [first, .., it, .., last).
+    if (compar(it, key) < 0) {
+      // Range is now [it+1, ..., last).
+      it += size;
+      first = it;
+    } else {
+      // Range is now [first, .., it), where *it >= v.
+      last = it;
+    }
+  }
+  
+  return (first != nil) ? (first) : (NULL);
+}

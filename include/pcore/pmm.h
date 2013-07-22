@@ -82,6 +82,8 @@ static inline void kfree_page(Page* page) {
   kfree_pages(page, 1);
 }
 
+// ---- Map memory based IO ports ----
+void pmm_iomap(uintptr_t kvaddr, uintptr_t ioaddr, size_t size);
 
 // ---- Include arch depended pmm utilities ----
 #include <pcore/memlayout.h>

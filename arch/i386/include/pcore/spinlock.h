@@ -18,6 +18,9 @@ typedef struct {
   volatile int flag;  // Whether this spinlock has been acquired.
 } SpinLock;
 
+#define SPIN_LOCK_INITIALIZER(INIT_LOCKED) \
+  { (INIT_LOCKED) }
+
 /// @brief Initialize a spinlock.
 void spinlock_init(SpinLock* lock) {
   lock->flag = 0;

@@ -18,6 +18,7 @@
 #include <pcore/clock.h>
 #include <pcore/sched.h>
 #include <pcore/memlayout.h>
+#include <pcore/pmm.h>
 
 /* *
  * Interrupt descriptor table:
@@ -68,8 +69,13 @@ static void trap_dispatch(TrapFrame *tf)
   switch (tf->tf_trapno) {
     // Page fault.
     case T_PGFLT:
-      trap_printframe(tf);
-      kpanic("Unexpected page fault in kernel.");
+      //trap_printframe(tf);
+      do {
+        uintptr_t vaddr = read_cr2();
+        pte_t* pte = get_pte(pmm_boot_pgdir, vaddr, 0);
+        panic("Unexpected page fault in kernel (cr2=0x%08x, pte=0x%08x).", 
+               vaddr, pte != NULL? *pte: 0);
+      } while (0);
       break;
     // Com & keyboard.
     case IRQ_OFFSET + IRQ_COM1:

@@ -17,7 +17,7 @@
 // ---- Port IO instructions ----
 
 static inline void io_delay(void) {
-  asm volatile ("outb %al, $0xED");
+  asm volatile ("outb %al, $0x80");
 }
 
 #define PCORE_MAKE_PORT_IO(bw, type)                                  \
@@ -47,6 +47,7 @@ static inline void io_delay(void) {
     
 PCORE_MAKE_PORT_IO(b, char)
 PCORE_MAKE_PORT_IO(w, short)
+PCORE_MAKE_PORT_IO(l, long)
 
 // TODO: merge insl into above.
 static inline void insl(uint32_t port, void *addr, int cnt)

@@ -15,6 +15,8 @@
 #include <asm/acpi.h>
 #include <dev/fb/fb.h>
 #include <dev/ide.h>
+#include <dev/pci/pci.h>
+#include <dev/snd/snd_hda.h>
 #include <boot/multiboot.h>
 #include <pcore/bootcons.h>
 #include <pcore/kdebug.h>
@@ -102,6 +104,18 @@ int kern_init(multiboot_info_t* mbi, uint32_t magic)
   
   // Initialize the IDE disks.
   ide_init();
+  
+  // Initialize the PCI devices.
+  pci_init();
+  
+#if 0
+  // Initialize the hda sound device.
+  snd_hda_init();
+  
+  // Stay idle for the kernel.
+  printf("[badapple] Stop here for further debug.\n");
+  kstay_idle();
+#endif
   
   // Play BadApple video.
   badapple_main();

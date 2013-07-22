@@ -128,6 +128,9 @@ ADD_CUSTOM_TARGET(
   COMMAND
     # Disk image should be 200 MB in size.
     dd if=/dev/zero of=${CMAKE_BINARY_DIR}/badapple.img count=409600 &&
+    # Put Audio block from 1(sector) to ~40M
+    dd if=${CMAKE_CURRENT_LIST_DIR}/video/audio.dat of=${CMAKE_BINARY_DIR}/badapple.img 
+      seek=1 obs=512 conv=notrunc &&
     # Put Video block from 50M to ~140M
     dd if=${CMAKE_CURRENT_LIST_DIR}/video/badapple.dat of=${CMAKE_BINARY_DIR}/badapple.img 
       seek=102400 obs=512 conv=notrunc
@@ -148,7 +151,7 @@ ADD_CUSTOM_TARGET(
 # Launch qemu emulator commands
 #
 SET(QEMU_OPTS 
-  -m 300M -kernel ${CMAKE_BINARY_DIR}/kernel.img -hda ${CMAKE_BINARY_DIR}/badapple.img
+  -m 300M -kernel ${CMAKE_BINARY_DIR}/kernel.img -soundhw ac97,hda,pcspk -hda ${CMAKE_BINARY_DIR}/badapple.img
 )
 
 ADD_CUSTOM_TARGET(
